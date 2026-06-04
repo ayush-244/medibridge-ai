@@ -46,13 +46,21 @@ const hospitalSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+
+    location: {
+      latitude: {
+        type: Number,
+      },
+      longitude: {
+        type: Number,
+      },
+    },
   },
   {
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model(
-  "Hospital",
-  hospitalSchema
-);
+const Hospital = mongoose.model("Hospital", hospitalSchema);
+
+module.exports = Hospital;

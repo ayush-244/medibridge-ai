@@ -11,6 +11,7 @@ const createHospital = async (req, res) => {
       availableBeds,
       totalICUBeds,
       availableICUBeds,
+      location,
     } = req.body;
 
     // Validation
@@ -37,6 +38,7 @@ const createHospital = async (req, res) => {
       availableBeds,
       totalICUBeds,
       availableICUBeds,
+      location,
     });
 
     res.status(201).json({
@@ -45,7 +47,7 @@ const createHospital = async (req, res) => {
       data: hospital,
     });
   } catch (error) {
-    console.error("Hospital Creation Error:", error.message);
+    console.error("Hospital Creation Error:", error);
 
     res.status(500).json({
       success: false,
