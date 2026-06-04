@@ -5,6 +5,7 @@ const morgan = require("morgan");
 
 const authRoutes = require("./routes/auth.routes");
 const hospitalRoutes = require("./routes/hospital.routes");
+const referralRoutes = require("./routes/referral.routes");
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(morgan("dev"));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/hospitals", hospitalRoutes);
+app.use("/api/referrals", referralRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
