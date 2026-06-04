@@ -13,11 +13,13 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
+const recommendationRoutes = require("./routes/recommendation.routes");
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/referrals", referralRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
