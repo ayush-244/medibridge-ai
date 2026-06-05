@@ -110,7 +110,7 @@ const acceptReferral = async (req, res) => {
       bedType: "GENERAL",
       reservationStatus: "CONFIRMED",
       expiresAt: new Date(
-        Date.now() + 30 * 60 * 1000
+        Date.now() + 60 * 1000
       ),
     });
 
