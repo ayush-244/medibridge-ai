@@ -55,6 +55,13 @@ const hospitalSchema = new mongoose.Schema(
         type: Number,
       },
     },
+
+    doctors: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+      },
+    ],
   },
   {
     timestamps: true,
