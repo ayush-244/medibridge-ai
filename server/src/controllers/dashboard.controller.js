@@ -1,5 +1,7 @@
 const Hospital = require("../models/Hospital");
 const Referral = require("../models/Referral");
+const Doctor = require("../models/Doctor");
+const BedReservation = require("../models/BedReservation");
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -27,26 +29,50 @@ const getDashboardStats = async (req, res) => {
       0
     );
 
-    const pendingReferrals = await Referral.countDocuments({
-      status: "PENDING",
-    });
+    const totalDoctors = await Doctor.countDocuments();
 
-    const acceptedReferrals = await Referral.countDocuments({
-      status: "ACCEPTED",
-    });
+    const availableDoctors =
+      await Doctor.countDocuments({
+        status: "AVAILABLE",
+      });
 
-    const completedReferrals = await Referral.countDocuments({
-      status: "COMPLETED",
-    });
+    const busyDoctors =
+      await Doctor.countDocuments({
+        status: "BUSY",
+      });
+
+    const activeReservations =
+      await BedReservation.countDocuments({
+        reservationStatus: "CONFIRMED",
+      });
+
+    const pendingReferrals =
+      await Referral.countDocuments({
+        status: "PENDING",
+      });
+
+    const acceptedReferrals =
+      await Referral.countDocuments({
+        status: "ACCEPTED",
+      });
+
+    const completedReferrals =
+      await Referral.countDocuments({
+        status: "COMPLETED",
+      });
 
     res.status(200).json({
       success: true,
-      stats: {
+      data: {
         totalHospitals,
+        totalDoctors,
+        availableDoctors,
+        busyDoctors,
         totalBeds,
         availableBeds,
         totalICUBeds,
         availableICUBeds,
+        activeReservations,
         pendingReferrals,
         acceptedReferrals,
         completedReferrals,
@@ -58,6 +84,7 @@ const getDashboardStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server Error",
+      error: error.message,
     });
   }
 };
