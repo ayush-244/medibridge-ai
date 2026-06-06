@@ -3,6 +3,7 @@ const cron = require("node-cron");
 const BedReservation = require("../models/BedReservation");
 const Hospital = require("../models/Hospital");
 const Doctor = require("../models/Doctor");
+const logActivity = require("./activityLogger.service");
 
 const startReservationExpiryJob = () => {
   cron.schedule("* * * * *", async () => {
@@ -19,6 +20,13 @@ const startReservationExpiryJob = () => {
         // Mark reservation expired
         reservation.reservationStatus = "EXPIRED";
         await reservation.save();
+
+        await logActivity({
+          action: "RESERVATION_EXPIRED",
+          entityType: "Reservation",
+          entityId: reservation._id,
+          description: `Reservation expired for ${reservation.patientName}`,
+        });
 
         // Release bed
         const hospital = await Hospital.findById(

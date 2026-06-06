@@ -3,10 +3,18 @@ const Hospital = require("../models/Hospital");
 const BedReservation = require("../models/BedReservation");
 const { findAvailableDoctor } = require("../services/doctor.service");
 const getSpecialization = require("../utils/specializationMapper");
+const logActivity = require("../services/activityLogger.service");
 
 const createReferral = async (req, res) => {
   try {
     const referral = await Referral.create(req.body);
+
+    await logActivity({
+      action: "REFERRAL_CREATED",
+      entityType: "Referral",
+      entityId: referral._id,
+      description: `Referral created for ${referral.patientName}`,
+    });
 
     res.status(201).json({
       success: true,
@@ -67,7 +75,6 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    // Check bed availability
     if (hospital.availableBeds <= 0) {
       return res.status(400).json({
         success: false,
@@ -75,12 +82,10 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    // Determine required specialization
     const specialization = getSpecialization(
       referral.condition
     );
 
-    // Find available doctor
     const doctor = await findAvailableDoctor(
       hospital._id,
       specialization
@@ -93,15 +98,19 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    // Reserve bed
     hospital.availableBeds -= 1;
     await hospital.save();
 
-    // Update referral
     referral.status = "ACCEPTED";
     await referral.save();
 
-    // Create reservation
+    await logActivity({
+      action: "REFERRAL_ACCEPTED",
+      entityType: "Referral",
+      entityId: referral._id,
+      description: `Referral accepted for ${referral.patientName}`,
+    });
+
     const reservation = await BedReservation.create({
       patientName: referral.patientName,
       referral: referral._id,
@@ -114,10 +123,23 @@ const acceptReferral = async (req, res) => {
       ),
     });
 
-    // Mark doctor as BUSY
+    await logActivity({
+      action: "BED_RESERVED",
+      entityType: "Reservation",
+      entityId: reservation._id,
+      description: `Bed reserved for ${referral.patientName}`,
+    });
+
     doctor.status = "BUSY";
     doctor.currentPatients += 1;
     await doctor.save();
+
+    await logActivity({
+      action: "DOCTOR_ASSIGNED",
+      entityType: "Doctor",
+      entityId: doctor._id,
+      description: `${doctor.name} assigned to ${referral.patientName}`,
+    });
 
     res.status(200).json({
       success: true,
