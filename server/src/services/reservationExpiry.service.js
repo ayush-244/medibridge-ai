@@ -4,6 +4,9 @@ const BedReservation = require("../models/BedReservation");
 const Hospital = require("../models/Hospital");
 const Doctor = require("../models/Doctor");
 const logActivity = require("./activityLogger.service");
+const createNotification = require(
+  "./notification.service"
+);
 
 const startReservationExpiryJob = () => {
   cron.schedule("* * * * *", async () => {
@@ -26,6 +29,12 @@ const startReservationExpiryJob = () => {
           entityType: "Reservation",
           entityId: reservation._id,
           description: `Reservation expired for ${reservation.patientName}`,
+        });
+
+        await createNotification({
+          title: "Reservation Expired",
+          message: `${reservation.patientName} reservation expired`,
+          type: "WARNING",
         });
 
         // Release bed

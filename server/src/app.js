@@ -12,6 +12,9 @@ const aiRoutes = require("./routes/ai.routes");
 const doctorRoutes = require("./routes/doctor.routes");
 const reservationRoutes = require("./routes/reservation.routes");
 const activityRoutes = require("./routes/activity.routes");
+const notificationRoutes = require(
+  "./routes/notification.routes"
+);
 
 const app = express();
 
@@ -30,6 +33,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/activities", activityRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {

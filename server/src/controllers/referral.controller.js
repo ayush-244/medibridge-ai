@@ -3,7 +3,13 @@ const Hospital = require("../models/Hospital");
 const BedReservation = require("../models/BedReservation");
 const { findAvailableDoctor } = require("../services/doctor.service");
 const getSpecialization = require("../utils/specializationMapper");
+const getBedType = require(
+  "../utils/bedTypeMapper"
+);
 const logActivity = require("../services/activityLogger.service");
+const createNotification = require(
+  "../services/notification.service"
+);
 
 const createReferral = async (req, res) => {
   try {
@@ -14,6 +20,12 @@ const createReferral = async (req, res) => {
       entityType: "Referral",
       entityId: referral._id,
       description: `Referral created for ${referral.patientName}`,
+    });
+
+    await createNotification({
+      title: "New Referral",
+      message: `${referral.patientName} referral created`,
+      type: "INFO",
     });
 
     res.status(201).json({
@@ -75,16 +87,33 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    if (hospital.availableBeds <= 0) {
+    const specialization = getSpecialization(
+      referral.condition
+    );
+
+    const bedType = getBedType(
+      referral.condition
+    );
+
+    if (
+      bedType === "ICU" &&
+      hospital.availableICUBeds <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "No ICU beds available",
+      });
+    }
+
+    if (
+      bedType === "GENERAL" &&
+      hospital.availableBeds <= 0
+    ) {
       return res.status(400).json({
         success: false,
         message: "No beds available",
       });
     }
-
-    const specialization = getSpecialization(
-      referral.condition
-    );
 
     const doctor = await findAvailableDoctor(
       hospital._id,
@@ -98,7 +127,12 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    hospital.availableBeds -= 1;
+    if (bedType === "ICU") {
+      hospital.availableICUBeds -= 1;
+    } else {
+      hospital.availableBeds -= 1;
+    }
+
     await hospital.save();
 
     referral.status = "ACCEPTED";
@@ -111,12 +145,18 @@ const acceptReferral = async (req, res) => {
       description: `Referral accepted for ${referral.patientName}`,
     });
 
+    await createNotification({
+      title: "Referral Accepted",
+      message: `${referral.patientName} accepted`,
+      type: "SUCCESS",
+    });
+
     const reservation = await BedReservation.create({
       patientName: referral.patientName,
       referral: referral._id,
       hospital: hospital._id,
       doctor: doctor._id,
-      bedType: "GENERAL",
+      bedType,
       reservationStatus: "CONFIRMED",
       expiresAt: new Date(
         Date.now() + 60 * 1000
@@ -128,6 +168,12 @@ const acceptReferral = async (req, res) => {
       entityType: "Reservation",
       entityId: reservation._id,
       description: `Bed reserved for ${referral.patientName}`,
+    });
+
+    await createNotification({
+      title: "Bed Reserved",
+      message: `Bed reserved for ${referral.patientName}`,
+      type: "SUCCESS",
     });
 
     doctor.status = "BUSY";
