@@ -4,20 +4,18 @@ const BedReservation = require("../models/BedReservation");
 const Hospital = require("../models/Hospital");
 const Doctor = require("../models/Doctor");
 const logActivity = require("./activityLogger.service");
-const createNotification = require(
-  "./notification.service"
-);
+const createNotification = require("./notification.service");
+const emitEvent = require("./socketEmitter.service");
 
 const startReservationExpiryJob = () => {
   cron.schedule("* * * * *", async () => {
     try {
       console.log("Checking expired reservations...");
 
-      const expiredReservations =
-        await BedReservation.find({
-          reservationStatus: "CONFIRMED",
-          expiresAt: { $lt: new Date() },
-        });
+      const expiredReservations = await BedReservation.find({
+        reservationStatus: "CONFIRMED",
+        expiresAt: { $lt: new Date() },
+      });
 
       for (const reservation of expiredReservations) {
         // Mark reservation expired
@@ -38,9 +36,7 @@ const startReservationExpiryJob = () => {
         });
 
         // Release bed
-        const hospital = await Hospital.findById(
-          reservation.hospital
-        );
+        const hospital = await Hospital.findById(reservation.hospital);
 
         if (hospital) {
           hospital.availableBeds += 1;
@@ -48,34 +44,25 @@ const startReservationExpiryJob = () => {
         }
 
         // Release doctor
-        const doctor = await Doctor.findById(
-          reservation.doctor
-        );
+        const doctor = await Doctor.findById(reservation.doctor);
 
         if (doctor) {
-          doctor.currentPatients = Math.max(
-            0,
-            doctor.currentPatients - 1
-          );
+          doctor.currentPatients = Math.max(0, doctor.currentPatients - 1);
 
-          if (
-  doctor.currentPatients <
-  doctor.maxPatients
-) {
-  doctor.status = "AVAILABLE";
-}
+          if (doctor.currentPatients < doctor.maxPatients) {
+            doctor.status = "AVAILABLE";
+          }
           await doctor.save();
         }
 
-        console.log(
-          `Reservation expired: ${reservation._id}`
-        );
+        console.log(`Reservation expired: ${reservation._id}`);
+        emitEvent("reservationExpired", {
+  reservationId: reservation._id,
+  patientName: reservation.patientName,
+});
       }
     } catch (error) {
-      console.error(
-        "Reservation expiry job failed:",
-        error
-      );
+      console.error("Reservation expiry job failed:", error);
     }
   });
 };

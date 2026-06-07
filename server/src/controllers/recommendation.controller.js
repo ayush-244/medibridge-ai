@@ -1,9 +1,15 @@
 const Hospital = require("../models/Hospital");
+const Doctor = require("../models/Doctor");
 const calculateDistance = require("../utils/distance");
 
 const getBestHospital = async (req, res) => {
   try {
-    const { latitude, longitude } = req.query;
+    const {
+      latitude,
+      longitude,
+      specialization,
+      bedType,
+    } = req.query;
 
     if (!latitude || !longitude) {
       return res.status(400).json({
@@ -24,13 +30,13 @@ const getBestHospital = async (req, res) => {
     let bestHospital = null;
     let highestScore = -1;
 
-    hospitals.forEach((hospital) => {
+    for (const hospital of hospitals) {
       if (
         !hospital.location ||
         hospital.location.latitude == null ||
         hospital.location.longitude == null
       ) {
-        return;
+        continue;
       }
 
       const distance = calculateDistance(
@@ -40,9 +46,28 @@ const getBestHospital = async (req, res) => {
         hospital.location.longitude
       );
 
+      const doctors = await Doctor.find({
+        hospital: hospital._id,
+        specialization,
+      });
+
+      const availableDoctors = doctors.filter(
+        (doctor) =>
+          doctor.currentPatients <
+          doctor.maxPatients
+      );
+
+      const bedScore =
+        bedType === "ICU"
+          ? hospital.availableICUBeds
+          : hospital.availableBeds;
+
+      const doctorScore =
+        availableDoctors.length * 50;
+
       const score =
-        hospital.availableBeds +
-        hospital.availableICUBeds * 5 -
+        bedScore +
+        doctorScore -
         distance;
 
       if (score > highestScore) {
@@ -50,12 +75,22 @@ const getBestHospital = async (req, res) => {
 
         bestHospital = {
           ...hospital.toObject(),
+
           distance: distance.toFixed(2),
+
           score: score.toFixed(2),
+
+          availableDoctors:
+            availableDoctors.length,
+
+          specialization,
+
+          bedType,
+
           mapLink: `https://www.google.com/maps?q=${hospital.location.latitude},${hospital.location.longitude}`,
         };
       }
-    });
+    }
 
     res.status(200).json({
       success: true,
@@ -86,6 +121,7 @@ const getNearbyHospitals = async (req, res) => {
       )
       .map((hospital) => ({
         ...hospital.toObject(),
+
         distance: Number(
           calculateDistance(
             Number(latitude),
@@ -94,6 +130,7 @@ const getNearbyHospitals = async (req, res) => {
             hospital.location.longitude
           ).toFixed(2)
         ),
+
         mapLink: `https://www.google.com/maps?q=${hospital.location.latitude},${hospital.location.longitude}`,
       }))
       .sort((a, b) => a.distance - b.distance);

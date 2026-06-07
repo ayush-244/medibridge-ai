@@ -3,13 +3,10 @@ const Hospital = require("../models/Hospital");
 const BedReservation = require("../models/BedReservation");
 const { findAvailableDoctor } = require("../services/doctor.service");
 const getSpecialization = require("../utils/specializationMapper");
-const getBedType = require(
-  "../utils/bedTypeMapper"
-);
+const getBedType = require("../utils/bedTypeMapper");
 const logActivity = require("../services/activityLogger.service");
-const createNotification = require(
-  "../services/notification.service"
-);
+const createNotification = require("../services/notification.service");
+const emitEvent = require("../services/socketEmitter.service");
 
 const createReferral = async (req, res) => {
   try {
@@ -76,9 +73,7 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    const hospital = await Hospital.findById(
-      referral.toHospital
-    );
+    const hospital = await Hospital.findById(referral.toHospital);
 
     if (!hospital) {
       return res.status(404).json({
@@ -87,38 +82,25 @@ const acceptReferral = async (req, res) => {
       });
     }
 
-    const specialization = getSpecialization(
-      referral.condition
-    );
+    const specialization = getSpecialization(referral.condition);
 
-    const bedType = getBedType(
-      referral.condition
-    );
+    const bedType = getBedType(referral.condition);
 
-    if (
-      bedType === "ICU" &&
-      hospital.availableICUBeds <= 0
-    ) {
+    if (bedType === "ICU" && hospital.availableICUBeds <= 0) {
       return res.status(400).json({
         success: false,
         message: "No ICU beds available",
       });
     }
 
-    if (
-      bedType === "GENERAL" &&
-      hospital.availableBeds <= 0
-    ) {
+    if (bedType === "GENERAL" && hospital.availableBeds <= 0) {
       return res.status(400).json({
         success: false,
         message: "No beds available",
       });
     }
 
-    const doctor = await findAvailableDoctor(
-      hospital._id,
-      specialization
-    );
+    const doctor = await findAvailableDoctor(hospital._id, specialization);
 
     if (!doctor) {
       return res.status(400).json({
@@ -137,6 +119,12 @@ const acceptReferral = async (req, res) => {
 
     referral.status = "ACCEPTED";
     await referral.save();
+
+    emitEvent("referralAccepted", {
+      referralId: referral._id,
+      patientName: referral.patientName,
+      status: referral.status,
+    });
 
     await logActivity({
       action: "REFERRAL_ACCEPTED",
@@ -158,9 +146,13 @@ const acceptReferral = async (req, res) => {
       doctor: doctor._id,
       bedType,
       reservationStatus: "CONFIRMED",
-      expiresAt: new Date(
-        Date.now() + 60 * 1000
-      ),
+      expiresAt: new Date(Date.now() + 60 * 1000),
+    });
+
+    emitEvent("bedReserved", {
+      reservationId: reservation._id,
+      patientName: reservation.patientName,
+      bedType: reservation.bedType,
     });
 
     await logActivity({
@@ -170,18 +162,18 @@ const acceptReferral = async (req, res) => {
       description: `Bed reserved for ${referral.patientName}`,
     });
 
+    await createNotification({
+      title: "Bed Reserved",
+      message: `Bed reserved for ${referral.patientName}`,
+      type: "SUCCESS",
+    });
+
     doctor.currentPatients += 1;
 
-if (
-  doctor.currentPatients >=
-  doctor.maxPatients
-) {
-  doctor.status = "BUSY";
-}
+    if (doctor.currentPatients >= doctor.maxPatients) {
+      doctor.status = "BUSY";
+    }
 
-await doctor.save();
-    doctor.status = "BUSY";
-    doctor.currentPatients += 1;
     await doctor.save();
 
     await logActivity({
@@ -191,10 +183,18 @@ await doctor.save();
       description: `${doctor.name} assigned to ${referral.patientName}`,
     });
 
+    emitEvent("doctorAssigned", {
+      doctorId: doctor._id,
+      doctorName: doctor.name,
+      specialization: doctor.specialization,
+      patientName: referral.patientName,
+      status: doctor.status,
+      currentPatients: doctor.currentPatients,
+    });
+
     res.status(200).json({
       success: true,
-      message:
-        "Referral accepted and bed reserved",
+      message: "Referral accepted and bed reserved",
       data: {
         referral,
         reservation,
@@ -223,7 +223,7 @@ const rejectReferral = async (req, res) => {
     const referral = await Referral.findByIdAndUpdate(
       req.params.id,
       { status: "REJECTED" },
-      { new: true }
+      { new: true },
     );
 
     if (!referral) {
@@ -253,7 +253,7 @@ const completeReferral = async (req, res) => {
     const referral = await Referral.findByIdAndUpdate(
       req.params.id,
       { status: "COMPLETED" },
-      { new: true }
+      { new: true },
     );
 
     if (!referral) {
