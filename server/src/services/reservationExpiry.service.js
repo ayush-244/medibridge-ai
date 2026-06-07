@@ -58,10 +58,12 @@ const startReservationExpiryJob = () => {
             doctor.currentPatients - 1
           );
 
-          if (doctor.currentPatients === 0) {
-            doctor.status = "AVAILABLE";
-          }
-
+          if (
+  doctor.currentPatients <
+  doctor.maxPatients
+) {
+  doctor.status = "AVAILABLE";
+}
           await doctor.save();
         }
 

@@ -170,12 +170,16 @@ const acceptReferral = async (req, res) => {
       description: `Bed reserved for ${referral.patientName}`,
     });
 
-    await createNotification({
-      title: "Bed Reserved",
-      message: `Bed reserved for ${referral.patientName}`,
-      type: "SUCCESS",
-    });
+    doctor.currentPatients += 1;
 
+if (
+  doctor.currentPatients >=
+  doctor.maxPatients
+) {
+  doctor.status = "BUSY";
+}
+
+await doctor.save();
     doctor.status = "BUSY";
     doctor.currentPatients += 1;
     await doctor.save();

@@ -4,13 +4,21 @@ const findAvailableDoctor = async (
   hospitalId,
   specialization
 ) => {
-  return await Doctor.findOne({
+  const doctors = await Doctor.find({
     hospital: hospitalId,
     specialization,
-    status: "AVAILABLE",
+    status: {
+      $ne: "OFF_DUTY",
+    },
   }).sort({
     currentPatients: 1,
   });
+
+  return doctors.find(
+    (doctor) =>
+      doctor.currentPatients <
+      doctor.maxPatients
+  );
 };
 
 module.exports = {
