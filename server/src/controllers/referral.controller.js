@@ -7,6 +7,7 @@ const getBedType = require("../utils/bedTypeMapper");
 const logActivity = require("../services/activityLogger.service");
 const createNotification = require("../services/notification.service");
 const emitEvent = require("../services/socketEmitter.service");
+const {acceptReferralService,} = require("../services/referralAcceptance.service");
 
 const createReferral = async (req, res) => {
   try {
@@ -62,158 +63,26 @@ const getAllReferrals = async (req, res) => {
   }
 };
 
-const acceptReferral = async (req, res) => {
+const acceptReferral = async (
+  req,
+  res
+) => {
   try {
-    const referral = await Referral.findById(req.params.id);
-
-    if (!referral) {
-      return res.status(404).json({
-        success: false,
-        message: "Referral not found",
-      });
-    }
-
-    const hospital = await Hospital.findById(referral.toHospital);
-
-    if (!hospital) {
-      return res.status(404).json({
-        success: false,
-        message: "Destination hospital not found",
-      });
-    }
-
-    const specialization = getSpecialization(referral.condition);
-
-    const bedType = getBedType(referral.condition);
-
-    if (bedType === "ICU" && hospital.availableICUBeds <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No ICU beds available",
-      });
-    }
-
-    if (bedType === "GENERAL" && hospital.availableBeds <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "No beds available",
-      });
-    }
-
-    const doctor = await findAvailableDoctor(hospital._id, specialization);
-
-    if (!doctor) {
-      return res.status(400).json({
-        success: false,
-        message: `No ${specialization} doctor available`,
-      });
-    }
-
-    if (bedType === "ICU") {
-      hospital.availableICUBeds -= 1;
-    } else {
-      hospital.availableBeds -= 1;
-    }
-
-    await hospital.save();
-
-    referral.status = "ACCEPTED";
-    await referral.save();
-
-    emitEvent("referralAccepted", {
-      referralId: referral._id,
-      patientName: referral.patientName,
-      status: referral.status,
-    });
-
-    await logActivity({
-      action: "REFERRAL_ACCEPTED",
-      entityType: "Referral",
-      entityId: referral._id,
-      description: `Referral accepted for ${referral.patientName}`,
-    });
-
-    await createNotification({
-      title: "Referral Accepted",
-      message: `${referral.patientName} accepted`,
-      type: "SUCCESS",
-    });
-
-    const reservation = await BedReservation.create({
-      patientName: referral.patientName,
-      referral: referral._id,
-      hospital: hospital._id,
-      doctor: doctor._id,
-      bedType,
-      reservationStatus: "CONFIRMED",
-      expiresAt: new Date(Date.now() + 60 * 1000),
-    });
-
-    emitEvent("bedReserved", {
-      reservationId: reservation._id,
-      patientName: reservation.patientName,
-      bedType: reservation.bedType,
-    });
-
-    await logActivity({
-      action: "BED_RESERVED",
-      entityType: "Reservation",
-      entityId: reservation._id,
-      description: `Bed reserved for ${referral.patientName}`,
-    });
-
-    await createNotification({
-      title: "Bed Reserved",
-      message: `Bed reserved for ${referral.patientName}`,
-      type: "SUCCESS",
-    });
-
-    doctor.currentPatients += 1;
-
-    if (doctor.currentPatients >= doctor.maxPatients) {
-      doctor.status = "BUSY";
-    }
-
-    await doctor.save();
-
-    await logActivity({
-      action: "DOCTOR_ASSIGNED",
-      entityType: "Doctor",
-      entityId: doctor._id,
-      description: `${doctor.name} assigned to ${referral.patientName}`,
-    });
-
-    emitEvent("doctorAssigned", {
-      doctorId: doctor._id,
-      doctorName: doctor.name,
-      specialization: doctor.specialization,
-      patientName: referral.patientName,
-      status: doctor.status,
-      currentPatients: doctor.currentPatients,
-    });
+    const result =
+      await acceptReferralService(
+        req.params.id
+      );
 
     res.status(200).json({
       success: true,
-      message: "Referral accepted and bed reserved",
-      data: {
-        referral,
-        reservation,
-        doctor: {
-          id: doctor._id,
-          name: doctor.name,
-          specialization: doctor.specialization,
-          status: doctor.status,
-          currentPatients: doctor.currentPatients,
-        },
-      },
+      message:
+        "Referral accepted and bed reserved",
+      data: result,
     });
   } catch (error) {
-    console.error(error);
-
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: "Server Error",
-      error: error.message,
+      message: error.message,
     });
   }
 };

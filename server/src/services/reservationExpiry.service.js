@@ -36,12 +36,20 @@ const startReservationExpiryJob = () => {
         });
 
         // Release bed
-        const hospital = await Hospital.findById(reservation.hospital);
+        // Release bed
+const hospital = await Hospital.findById(
+  reservation.hospital
+);
 
-        if (hospital) {
-          hospital.availableBeds += 1;
-          await hospital.save();
-        }
+if (hospital) {
+  if (reservation.bedType === "ICU") {
+    hospital.availableICUBeds += 1;
+  } else {
+    hospital.availableBeds += 1;
+  }
+
+  await hospital.save();
+}
 
         // Release doctor
         const doctor = await Doctor.findById(reservation.doctor);
