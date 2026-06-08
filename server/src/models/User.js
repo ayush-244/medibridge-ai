@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     email: {
       type: String,
       required: true,
@@ -14,14 +15,50 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
       required: true,
     },
+
     role: {
       type: String,
-      enum: ["SUPER_ADMIN", "HOSPITAL_ADMIN", "REFERRAL_COORDINATOR", "DOCTOR"],
+      enum: [
+        "SUPER_ADMIN",
+        "HOSPITAL_ADMIN",
+        "REFERRAL_COORDINATOR",
+        "DOCTOR",
+      ],
       default: "DOCTOR",
+    },
+
+    verificationStatus: {
+      type: String,
+      enum: [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+      ],
+      default: "PENDING",
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    documents: {
+      licenseNumber: {
+        type: String,
+      },
+
+      hospitalRegistrationNumber: {
+        type: String,
+      },
+
+      employeeId: {
+        type: String,
+      },
     },
   },
   {
@@ -29,4 +66,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model(
+  "User",
+  userSchema
+);

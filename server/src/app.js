@@ -18,6 +18,9 @@ const notificationRoutes = require(
 const smartReferralRoutes = require(
   "./routes/smartReferral.routes"
 );
+const adminRoutes = require(
+  "./routes/admin.routes"
+);
 
 const app = express();
 
@@ -30,17 +33,27 @@ app.use(morgan("dev"));
 app.use("/api/auth", authRoutes);
 app.use("/api/hospitals", hospitalRoutes);
 app.use("/api/referrals", referralRoutes);
-app.use("/api/recommendations", recommendationRoutes);
+app.use(
+  "/api/recommendations",
+  recommendationRoutes
+);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/doctors", doctorRoutes);
-app.use("/api/reservations", reservationRoutes);
+app.use(
+  "/api/reservations",
+  reservationRoutes
+);
 app.use("/api/activities", activityRoutes);
-app.use("/api/notifications", notificationRoutes);
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
 app.use(
   "/api/smart-referrals",
   smartReferralRoutes
 );
+app.use("/api/admin", adminRoutes);
 
 // Health Check
 app.get("/api/health", (req, res) => {
