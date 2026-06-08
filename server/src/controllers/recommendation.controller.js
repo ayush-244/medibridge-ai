@@ -1,6 +1,9 @@
 const Hospital = require("../models/Hospital");
 const Doctor = require("../models/Doctor");
 const calculateDistance = require("../utils/distance");
+const getSpecialization = require("../utils/specializationMapper");
+const getBedType = require("../utils/bedTypeMapper");
+const getSeverity = require("../utils/severityMapper");
 
 const getBestHospital = async (req, res) => {
   try {
@@ -75,18 +78,12 @@ const getBestHospital = async (req, res) => {
 
         bestHospital = {
           ...hospital.toObject(),
-
           distance: distance.toFixed(2),
-
           score: score.toFixed(2),
-
           availableDoctors:
             availableDoctors.length,
-
           specialization,
-
           bedType,
-
           mapLink: `https://www.google.com/maps?q=${hospital.location.latitude},${hospital.location.longitude}`,
         };
       }
@@ -95,6 +92,122 @@ const getBestHospital = async (req, res) => {
     res.status(200).json({
       success: true,
       recommendedHospital: bestHospital,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+const getSmartRecommendation = async (req, res) => {
+  try {
+    const {
+      latitude,
+      longitude,
+      condition,
+    } = req.query;
+
+    if (
+      !latitude ||
+      !longitude ||
+      !condition
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "latitude, longitude and condition are required",
+      });
+    }
+
+    const specialization =
+      getSpecialization(condition);
+
+    const bedType =
+      getBedType(condition);
+
+    const severity =
+      getSeverity(condition);
+
+    const hospitals =
+      await Hospital.find();
+
+    let bestHospital = null;
+    let highestScore = -1;
+
+    for (const hospital of hospitals) {
+      if (
+        !hospital.location ||
+        hospital.location.latitude == null ||
+        hospital.location.longitude == null
+      ) {
+        continue;
+      }
+
+      const distance =
+        calculateDistance(
+          Number(latitude),
+          Number(longitude),
+          hospital.location.latitude,
+          hospital.location.longitude
+        );
+
+      const doctors =
+        await Doctor.find({
+          hospital: hospital._id,
+          specialization,
+        });
+
+      const availableDoctors =
+        doctors.filter(
+          (doctor) =>
+            doctor.currentPatients <
+            doctor.maxPatients
+        );
+
+      const bedScore =
+        bedType === "ICU"
+          ? hospital.availableICUBeds
+          : hospital.availableBeds;
+
+      const doctorScore =
+        availableDoctors.length * 50;
+
+      const score =
+        bedScore +
+        doctorScore -
+        distance;
+
+      if (score > highestScore) {
+        highestScore = score;
+
+        bestHospital = {
+          ...hospital.toObject(),
+          distance:
+            distance.toFixed(2),
+          score:
+            score.toFixed(2),
+          severity,
+          specialization,
+          bedType,
+          availableDoctors:
+            availableDoctors.length,
+          mapLink: `https://www.google.com/maps?q=${hospital.location.latitude},${hospital.location.longitude}`,
+        };
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      condition,
+      severity,
+      specialization,
+      bedType,
+      recommendedHospital:
+        bestHospital,
     });
   } catch (error) {
     console.error(error);
@@ -153,4 +266,5 @@ const getNearbyHospitals = async (req, res) => {
 module.exports = {
   getBestHospital,
   getNearbyHospitals,
+  getSmartRecommendation,
 };
