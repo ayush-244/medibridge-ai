@@ -15,6 +15,9 @@ const activityRoutes = require("./routes/activity.routes");
 const notificationRoutes = require(
   "./routes/notification.routes"
 );
+const smartReferralRoutes = require(
+  "./routes/smartReferral.routes"
+);
 
 const app = express();
 
@@ -34,6 +37,10 @@ app.use("/api/doctors", doctorRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/activities", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use(
+  "/api/smart-referrals",
+  smartReferralRoutes
+);
 
 // Health Check
 app.get("/api/health", (req, res) => {
