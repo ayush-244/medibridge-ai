@@ -20,6 +20,11 @@ const doctorSchema = new mongoose.Schema(
       required: true,
     },
 
+    user: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+},
+
     status: {
       type: String,
       enum: ["AVAILABLE", "BUSY", "OFF_DUTY"],
@@ -38,10 +43,9 @@ const doctorSchema = new mongoose.Schema(
     },
 
     maxPatients: {
-  type: Number,
-  default: 5,
-},
-
+      type: Number,
+      default: 5,
+    },
   },
   {
     timestamps: true,

@@ -22,6 +22,10 @@ const adminRoutes = require(
   "./routes/admin.routes"
 );
 
+const doctorDashboardRoutes = require(
+  "./routes/doctorDashboard.routes"
+);
+
 const app = express();
 
 app.use(express.json());
@@ -40,6 +44,10 @@ app.use(
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/doctors", doctorRoutes);
+app.use(
+  "/api/doctor-dashboard",
+  doctorDashboardRoutes
+);
 app.use(
   "/api/reservations",
   reservationRoutes
