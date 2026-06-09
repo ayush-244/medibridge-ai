@@ -43,14 +43,47 @@ const createReferral = async (req, res) => {
 
 const getAllReferrals = async (req, res) => {
   try {
-    const referrals = await Referral.find()
-      .populate("fromHospital", "name city")
-      .populate("toHospital", "name city")
-      .populate("requestedBy", "name email");
+    let query = {};
+
+    if (
+      req.user.role ===
+      "HOSPITAL_ADMIN"
+    ) {
+      query = {
+        $or: [
+          {
+            fromHospital:
+              req.user.hospital,
+          },
+          {
+            toHospital:
+              req.user.hospital,
+          },
+        ],
+      };
+    }
+
+    const referrals =
+      await Referral.find(
+        query
+      )
+        .populate(
+          "fromHospital",
+          "name city"
+        )
+        .populate(
+          "toHospital",
+          "name city"
+        )
+        .populate(
+          "requestedBy",
+          "name email"
+        );
 
     res.status(200).json({
       success: true,
-      count: referrals.length,
+      count:
+        referrals.length,
       data: referrals,
     });
   } catch (error) {
@@ -58,7 +91,8 @@ const getAllReferrals = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Server Error",
+      message:
+        "Server Error",
     });
   }
 };
