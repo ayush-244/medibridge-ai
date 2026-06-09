@@ -32,6 +32,12 @@ const userSchema = new mongoose.Schema(
       default: "DOCTOR",
     },
 
+    hospital: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hospital",
+      default: null,
+    },
+
     verificationStatus: {
       type: String,
       enum: [

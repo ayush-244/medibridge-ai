@@ -9,6 +9,7 @@ const registerUser = async (req, res) => {
       email,
       password,
       role,
+      hospital,
     } = req.body;
 
     // Validation
@@ -40,6 +41,20 @@ const registerUser = async (req, res) => {
       });
     }
 
+    if (
+  [
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR",
+  ].includes(role) &&
+  !hospital
+) {
+  return res.status(400).json({
+    success: false,
+    message:
+      "Hospital is required for this role",
+  });
+}
+
     // Hash Password
     const hashedPassword =
       await bcrypt.hash(
@@ -65,7 +80,7 @@ const registerUser = async (req, res) => {
         password:
           hashedPassword,
         role,
-
+        hospital: hospital || null,
         verificationStatus,
         isVerified,
       });
@@ -154,6 +169,7 @@ const loginUser = async (
       {
         id: user._id,
         role: user.role,
+        hospital: user.hospital,
       },
       process.env.JWT_SECRET,
       {
