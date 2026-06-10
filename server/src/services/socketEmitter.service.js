@@ -12,4 +12,8 @@ const emitEvent = (eventName, data) => {
   }
 };
 
+emitEvent("dashboardUpdated", {
+  timestamp: new Date(),
+});
+
 module.exports = emitEvent;
