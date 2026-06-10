@@ -100,22 +100,31 @@ const acceptReferralService = async (referralId) => {
   await doctor.save();
 
   emitEvent("referralAccepted", {
-    referralId: referral._id,
-    patientName:
-      referral.patientName,
-  });
+  referralId: referral._id,
+  patientName: referral.patientName,
+});
 
-  emitEvent("bedReserved", {
-    reservationId:
-      reservation._id,
-    patientName:
-      referral.patientName,
-  });
+emitEvent("dashboardUpdated", {
+  action: "REFERRAL_ACCEPTED",
+});
 
-  emitEvent("doctorAssigned", {
-    doctorId: doctor._id,
-    doctorName: doctor.name,
-  });
+emitEvent("bedReserved", {
+  reservationId: reservation._id,
+  patientName: referral.patientName,
+});
+
+emitEvent("dashboardUpdated", {
+  action: "BED_RESERVED",
+});
+
+emitEvent("doctorAssigned", {
+  doctorId: doctor._id,
+  doctorName: doctor.name,
+});
+
+emitEvent("dashboardUpdated", {
+  action: "DOCTOR_ASSIGNED",
+});
 
   await createNotification({
     title: "Referral Accepted",

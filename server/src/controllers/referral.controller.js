@@ -21,10 +21,14 @@ const createReferral = async (req, res) => {
     });
 
     await createNotification({
-      title: "New Referral",
-      message: `${referral.patientName} referral created`,
-      type: "INFO",
-    });
+  title: "New Referral",
+  message: `${referral.patientName} referral created`,
+  type: "INFO",
+});
+
+emitEvent("dashboardUpdated", {
+  action: "REFERRAL_CREATED",
+});
 
     res.status(201).json({
       success: true,

@@ -37,19 +37,17 @@ const startReservationExpiryJob = () => {
 
         // Release bed
         // Release bed
-const hospital = await Hospital.findById(
-  reservation.hospital
-);
+        const hospital = await Hospital.findById(reservation.hospital);
 
-if (hospital) {
-  if (reservation.bedType === "ICU") {
-    hospital.availableICUBeds += 1;
-  } else {
-    hospital.availableBeds += 1;
-  }
+        if (hospital) {
+          if (reservation.bedType === "ICU") {
+            hospital.availableICUBeds += 1;
+          } else {
+            hospital.availableBeds += 1;
+          }
 
-  await hospital.save();
-}
+          await hospital.save();
+        }
 
         // Release doctor
         const doctor = await Doctor.findById(reservation.doctor);
@@ -67,6 +65,10 @@ if (hospital) {
         emitEvent("reservationExpired", {
   reservationId: reservation._id,
   patientName: reservation.patientName,
+});
+
+emitEvent("dashboardUpdated", {
+  action: "RESERVATION_EXPIRED",
 });
       }
     } catch (error) {

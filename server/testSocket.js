@@ -47,6 +47,13 @@ socket.on("doctorAssigned", (data) => {
   console.log("👨‍⚕️ Doctor Assigned:", data);
 });
 
+socket.on("dashboardUpdated", (data) => {
+  console.log(
+    "📊 Dashboard Updated:",
+    data
+  );
+});
+
 // ===== GRACEFUL SHUTDOWN =====
 process.on("SIGINT", () => {
   console.log("\n👋 Closing Socket.IO connection...");

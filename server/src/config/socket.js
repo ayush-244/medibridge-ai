@@ -1,6 +1,11 @@
-let io;
+let io = null;
 
 const initializeSocket = (server) => {
+  if (io) {
+    console.warn("Socket.IO already initialized");
+    return io;
+  }
+
   const { Server } = require("socket.io");
 
   io = new Server(server, {
@@ -22,13 +27,14 @@ const initializeSocket = (server) => {
     });
   });
 
+  console.log("Socket.IO initialized successfully");
   return io;
 };
 
 const getIO = () => {
   if (!io) {
     throw new Error(
-      "Socket.IO not initialized"
+      "Socket.IO has not been initialized. Call initializeSocket(server) first."
     );
   }
 
