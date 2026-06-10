@@ -26,6 +26,10 @@ const doctorDashboardRoutes = require(
   "./routes/doctorDashboard.routes"
 );
 
+const reportRoutes = require(
+  "./routes/report.routes"
+);
+
 const app = express();
 
 app.use(express.json());
@@ -62,6 +66,10 @@ app.use(
   smartReferralRoutes
 );
 app.use("/api/admin", adminRoutes);
+app.use(
+  "/api/reports",
+  reportRoutes
+);
 
 // Health Check
 app.get("/api/health", (req, res) => {
