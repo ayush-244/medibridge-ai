@@ -4,7 +4,7 @@ import {
   Clock,
   HeartPulse,
 } from "lucide-react";
-import { StatCard } from "@/features/dashboard/components/StatCard";
+import { StatCard } from "@/components/analytics/StatCard";
 import type { ReservationSummary } from "@/features/reservations/types/reservation.types";
 
 interface ReservationSummaryCardsProps {
