@@ -4,6 +4,8 @@ const {
   getHospitalSummary,
   getDoctorSummary,
   getReferralSummary,
+  getHospitalAnalytics,
+  getTopHospitals,
 } = require("../controllers/report.controller");
 
 
@@ -18,6 +20,27 @@ const authorize = require(
 
 
 const router = express.Router();
+
+router.get(
+  "/hospital-summary",
+  authenticateUser,
+  authorize("SUPER_ADMIN"),
+  getHospitalSummary
+);
+
+router.get(
+  "/hospital/:hospitalId",
+  authenticateUser,
+  authorize("SUPER_ADMIN"),
+  getHospitalAnalytics
+);
+
+router.get(
+  "/top-hospitals",
+  authenticateUser,
+  authorize("SUPER_ADMIN"),
+  getTopHospitals
+);
 
 router.get(
   "/system-summary",
@@ -39,6 +62,8 @@ router.get(
   authorize("SUPER_ADMIN"),
   getReferralSummary
 );
+
+
 
 module.exports = router;
 

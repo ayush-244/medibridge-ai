@@ -248,9 +248,167 @@ const getDoctorSummary = async (
   }
 };
 
+const getHospitalAnalytics = async (
+  req,
+  res
+) => {
+  try {
+    const hospital =
+      await Hospital.findById(
+        req.params.hospitalId
+      );
+
+    if (!hospital) {
+      return res.status(404).json({
+        success: false,
+        message: "Hospital not found",
+      });
+    }
+
+    const totalDoctors =
+      await Doctor.countDocuments({
+        hospital: hospital._id,
+      });
+
+    const availableDoctors =
+      await Doctor.countDocuments({
+        hospital: hospital._id,
+        status: "AVAILABLE",
+      });
+
+    const totalReferrals =
+      await Referral.countDocuments({
+        $or: [
+          {
+            fromHospital:
+              hospital._id,
+          },
+          {
+            toHospital:
+              hospital._id,
+          },
+        ],
+      });
+
+    const acceptedReferrals =
+      await Referral.countDocuments({
+        $or: [
+          {
+            fromHospital:
+              hospital._id,
+          },
+          {
+            toHospital:
+              hospital._id,
+          },
+        ],
+        status: "ACCEPTED",
+      });
+
+    const occupancyRate =
+      (
+        ((hospital.totalBeds -
+          hospital.availableBeds) /
+          hospital.totalBeds) *
+        100
+      ).toFixed(2) + "%";
+
+    res.status(200).json({
+      success: true,
+      data: {
+        hospitalName:
+          hospital.name,
+        city: hospital.city,
+        totalDoctors,
+        availableDoctors,
+        totalBeds:
+          hospital.totalBeds,
+        availableBeds:
+          hospital.availableBeds,
+        totalICUBeds:
+          hospital.totalICUBeds,
+        availableICUBeds:
+          hospital.availableICUBeds,
+        totalReferrals,
+        acceptedReferrals,
+        occupancyRate,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+const getTopHospitals = async (
+  req,
+  res
+) => {
+  try {
+    const hospitals =
+      await Hospital.find();
+
+    const rankings =
+      await Promise.all(
+        hospitals.map(
+          async (hospital) => {
+            const acceptedReferrals =
+              await Referral.countDocuments({
+                toHospital:
+                  hospital._id,
+                status:
+                  "ACCEPTED",
+              });
+
+            const availableDoctors =
+              await Doctor.countDocuments({
+                hospital:
+                  hospital._id,
+                status:
+                  "AVAILABLE",
+              });
+
+            return {
+              hospitalName:
+                hospital.name,
+              city:
+                hospital.city,
+              acceptedReferrals,
+              availableBeds:
+                hospital.availableBeds,
+              availableDoctors,
+            };
+          }
+        )
+      );
+
+    rankings.sort(
+      (a, b) =>
+        b.acceptedReferrals -
+        a.acceptedReferrals
+    );
+
+    res.status(200).json({
+      success: true,
+      count: rankings.length,
+      data: rankings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message:
+        error.message,
+    });
+  }
+};
+
 module.exports = {
   getSystemSummary,
   getHospitalSummary,
   getDoctorSummary,
   getReferralSummary,
+  getHospitalAnalytics,
+  getTopHospitals,
 };
