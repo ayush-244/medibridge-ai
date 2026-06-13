@@ -7,7 +7,9 @@ const getBedType = require("../utils/bedTypeMapper");
 const logActivity = require("../services/activityLogger.service");
 const createNotification = require("../services/notification.service");
 const emitEvent = require("../services/socketEmitter.service");
-const {acceptReferralService,} = require("../services/referralAcceptance.service");
+const {
+  acceptReferralService,
+} = require("../services/referralAcceptance.service");
 
 const createReferral = async (req, res) => {
   try {
@@ -21,14 +23,14 @@ const createReferral = async (req, res) => {
     });
 
     await createNotification({
-  title: "New Referral",
-  message: `${referral.patientName} referral created`,
-  type: "INFO",
-});
+      title: "New Referral",
+      message: `${referral.patientName} referral created`,
+      type: "INFO",
+    });
 
-emitEvent("dashboardUpdated", {
-  action: "REFERRAL_CREATED",
-});
+    emitEvent("dashboardUpdated", {
+      action: "REFERRAL_CREATED",
+    });
 
     res.status(201).json({
       success: true,
@@ -49,45 +51,27 @@ const getAllReferrals = async (req, res) => {
   try {
     let query = {};
 
-    if (
-      req.user.role ===
-      "HOSPITAL_ADMIN"
-    ) {
+    if (req.user.role === "HOSPITAL_ADMIN") {
       query = {
         $or: [
           {
-            fromHospital:
-              req.user.hospital,
+            fromHospital: req.user.hospital,
           },
           {
-            toHospital:
-              req.user.hospital,
+            toHospital: req.user.hospital,
           },
         ],
       };
     }
 
-    const referrals =
-      await Referral.find(
-        query
-      )
-        .populate(
-          "fromHospital",
-          "name city"
-        )
-        .populate(
-          "toHospital",
-          "name city"
-        )
-        .populate(
-          "requestedBy",
-          "name email"
-        );
+    const referrals = await Referral.find(query)
+      .populate("fromHospital", "name city")
+      .populate("toHospital", "name city")
+      .populate("requestedBy", "name email");
 
     res.status(200).json({
       success: true,
-      count:
-        referrals.length,
+      count: referrals.length,
       data: referrals,
     });
   } catch (error) {
@@ -95,26 +79,18 @@ const getAllReferrals = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message:
-        "Server Error",
+      message: "Server Error",
     });
   }
 };
 
-const acceptReferral = async (
-  req,
-  res
-) => {
+const acceptReferral = async (req, res) => {
   try {
-    const result =
-      await acceptReferralService(
-        req.params.id
-      );
+    const result = await acceptReferralService(req.params.id);
 
     res.status(200).json({
       success: true,
-      message:
-        "Referral accepted and bed reserved",
+      message: "Referral accepted and bed reserved",
       data: result,
     });
   } catch (error) {

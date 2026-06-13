@@ -21,9 +21,9 @@ const doctorSchema = new mongoose.Schema(
     },
 
     user: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "User",
-},
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
 
     status: {
       type: String,
@@ -49,7 +49,7 @@ const doctorSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 module.exports = mongoose.model("Doctor", doctorSchema);

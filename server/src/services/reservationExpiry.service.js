@@ -63,13 +63,13 @@ const startReservationExpiryJob = () => {
 
         console.log(`Reservation expired: ${reservation._id}`);
         emitEvent("reservationExpired", {
-  reservationId: reservation._id,
-  patientName: reservation.patientName,
-});
+          reservationId: reservation._id,
+          patientName: reservation.patientName,
+        });
 
-emitEvent("dashboardUpdated", {
-  action: "RESERVATION_EXPIRED",
-});
+        emitEvent("dashboardUpdated", {
+          action: "RESERVATION_EXPIRED",
+        });
       }
     } catch (error) {
       console.error("Reservation expiry job failed:", error);

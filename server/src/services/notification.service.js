@@ -1,16 +1,8 @@
-const Notification = require(
-  "../models/Notification"
-);
+const Notification = require("../models/Notification");
 
-const emitEvent = require(
-  "./socketEmitter.service"
-);
+const emitEvent = require("./socketEmitter.service");
 
-const createNotification = async ({
-  title,
-  message,
-  type = "INFO",
-}) => {
+const createNotification = async ({ title, message, type = "INFO" }) => {
   try {
     await Notification.create({
       title,
@@ -19,15 +11,13 @@ const createNotification = async ({
     });
 
     emitEvent("notificationCreated", {
-  title,
-  message,
-  type,
-});
+      title,
+      message,
+      type,
+    });
+    
   } catch (error) {
-    console.error(
-      "Notification Error:",
-      error
-    );
+    console.error("Notification Error:", error);
   }
 };
 
