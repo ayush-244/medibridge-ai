@@ -51,18 +51,35 @@ const getAllReferrals = async (req, res) => {
   try {
     let query = {};
 
-    if (req.user.role === "HOSPITAL_ADMIN") {
-      query = {
-        $or: [
-          {
-            fromHospital: req.user.hospital,
-          },
-          {
-            toHospital: req.user.hospital,
-          },
-        ],
-      };
-    }
+if (req.user.role === "HOSPITAL_ADMIN") {
+  query.$or = [
+    {
+      fromHospital: req.user.hospital,
+    },
+    {
+      toHospital: req.user.hospital,
+    },
+  ];
+}
+
+// Filters
+if (req.query.status) {
+  query.status = req.query.status;
+}
+
+if (req.query.condition) {
+  query.condition = {
+    $regex: req.query.condition,
+    $options: "i",
+  };
+}
+
+if (req.query.patientName) {
+  query.patientName = {
+    $regex: req.query.patientName,
+    $options: "i",
+  };
+}
 
     const referrals = await Referral.find(query)
       .populate("fromHospital", "name city")
