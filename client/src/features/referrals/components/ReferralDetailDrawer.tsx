@@ -1,0 +1,230 @@
+import { Check, Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetBody,
+} from "@/components/ui/sheet";
+import {
+  ReferralPriorityBadge,
+  ReferralStatusBadge,
+} from "@/components/common/StatusBadge";
+import { ReferralDrawerSkeleton } from "@/features/referrals/components/ReferralDrawerSkeleton";
+import { getReferralPriority } from "@/features/referrals/utils/severity";
+import {
+  canAcceptReferral,
+  canCompleteReferral,
+  canRejectReferral,
+  formatReferralDate,
+  getHospitalCity,
+  getHospitalName,
+  getTimelineSteps,
+} from "@/features/referrals/utils/referralUtils";
+import type {
+  Referral,
+  ReferralAction,
+} from "@/features/referrals/types/referral.types";
+import { cn } from "@/lib/utils";
+
+interface DetailRowProps {
+  label: string;
+  value: string | number;
+}
+
+function DetailRow({ label, value }: DetailRowProps) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <span className="text-sm text-text-secondary">{label}</span>
+      <span className="text-sm font-medium text-text-primary">{value}</span>
+    </div>
+  );
+}
+
+interface ReferralDetailDrawerProps {
+  referral: Referral | null;
+  open: boolean;
+  actionLoading: ReferralAction | null;
+  onOpenChange: (open: boolean) => void;
+  onAction: (action: ReferralAction) => void;
+}
+
+export function ReferralDetailDrawer({
+  referral,
+  open,
+  actionLoading,
+  onOpenChange,
+  onAction,
+}: ReferralDetailDrawerProps) {
+  if (!referral) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="sm:max-w-lg">
+          <ReferralDrawerSkeleton />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  const priority = getReferralPriority(referral.condition);
+  const timeline = getTimelineSteps(referral.status);
+  const requestedBy =
+    typeof referral.requestedBy === "string"
+      ? referral.requestedBy
+      : referral.requestedBy.name;
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="flex flex-col sm:max-w-lg">
+        <SheetHeader>
+          <div className="flex items-start justify-between gap-3 pr-8">
+            <div>
+              <SheetTitle>{referral.patientName}</SheetTitle>
+              <SheetDescription>{referral.condition}</SheetDescription>
+            </div>
+            <ReferralStatusBadge status={referral.status} />
+          </div>
+        </SheetHeader>
+
+        <SheetBody className="flex-1 space-y-6">
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">Patient Information</h4>
+            <div className="divide-y divide-border rounded-lg border border-border px-4">
+              <DetailRow label="Patient Name" value={referral.patientName} />
+              <DetailRow label="Age" value={referral.age} />
+              <DetailRow label="Condition" value={referral.condition} />
+              <DetailRow label="Priority" value={priority} />
+              <DetailRow label="Requested By" value={requestedBy} />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">Hospital Routing</h4>
+            <div className="divide-y divide-border rounded-lg border border-border px-4">
+              <DetailRow
+                label="From Hospital"
+                value={getHospitalName(referral.fromHospital)}
+              />
+              <DetailRow
+                label="From City"
+                value={getHospitalCity(referral.fromHospital) || "—"}
+              />
+              <DetailRow
+                label="To Hospital"
+                value={getHospitalName(referral.toHospital)}
+              />
+              <DetailRow
+                label="To City"
+                value={getHospitalCity(referral.toHospital) || "—"}
+              />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">Timeline</h4>
+            <div className="space-y-0">
+              {timeline.map((step, index) => (
+                <div key={step.key} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={cn(
+                        "flex h-6 w-6 items-center justify-center rounded-full text-xs",
+                        step.completed
+                          ? step.rejected
+                            ? "bg-danger/10 text-danger"
+                            : "bg-success/10 text-success"
+                          : "bg-gray-100 text-text-secondary",
+                      )}
+                    >
+                      {step.completed ? (
+                        step.rejected ? (
+                          <X className="h-3 w-3" />
+                        ) : (
+                          <Check className="h-3 w-3" />
+                        )
+                      ) : (
+                        index + 1
+                      )}
+                    </div>
+                    {index < timeline.length - 1 && (
+                      <div className="my-1 h-8 w-px bg-border" />
+                    )}
+                  </div>
+                  <div className="pb-4">
+                    <p className="text-sm font-medium text-text-primary">
+                      {step.label}
+                    </p>
+                    {step.completed && (
+                      <p className="text-xs text-text-secondary">
+                        {formatReferralDate(referral.updatedAt)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">Dates</h4>
+            <div className="divide-y divide-border rounded-lg border border-border px-4">
+              <DetailRow
+                label="Created"
+                value={formatReferralDate(referral.createdAt)}
+              />
+              <DetailRow
+                label="Last Updated"
+                value={formatReferralDate(referral.updatedAt)}
+              />
+            </div>
+          </div>
+
+          <ReferralPriorityBadge priority={priority} />
+        </SheetBody>
+
+        <div className="border-t border-border p-6 space-y-2">
+          {canAcceptReferral(referral.status) && (
+            <Button
+              className="w-full gap-2"
+              onClick={() => onAction("accept")}
+              disabled={actionLoading !== null}
+            >
+              {actionLoading === "accept" && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Accept Referral
+            </Button>
+          )}
+          {canRejectReferral(referral.status) && (
+            <Button
+              variant="danger"
+              className="w-full gap-2"
+              onClick={() => onAction("reject")}
+              disabled={actionLoading !== null}
+            >
+              {actionLoading === "reject" && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Reject Referral
+            </Button>
+          )}
+          {canCompleteReferral(referral.status) && (
+            <Button
+              variant="secondary"
+              className="w-full gap-2"
+              onClick={() => onAction("complete")}
+              disabled={actionLoading !== null}
+            >
+              {actionLoading === "complete" && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
+              Complete Referral
+            </Button>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
