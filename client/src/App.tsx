@@ -7,15 +7,18 @@ function App() {
     <BrowserRouter>
       <AppRoutes />
       <Toaster
-        position="top-right"
-        richColors
-        closeButton
-        toastOptions={{
-          classNames: {
-            toast: "font-sans",
-          },
-        }}
-      />
+          position="top-right"
+          richColors
+          closeButton
+          expand
+          duration={5000}
+          visibleToasts={5}
+          toastOptions={{
+            classNames: {
+              toast: "font-sans",
+            },
+          }}
+        />
     </BrowserRouter>
   );
 }

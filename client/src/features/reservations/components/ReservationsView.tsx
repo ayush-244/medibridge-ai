@@ -109,7 +109,7 @@ export function ReservationsView() {
           description={error}
           icon={<CalendarClock className="h-6 w-6" />}
           action={
-            <Button onClick={refetch} className="gap-2">
+            <Button onClick={() => void refetch()} className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Retry
             </Button>
@@ -129,7 +129,7 @@ export function ReservationsView() {
             variant="secondary"
             size="sm"
             className="gap-2"
-            onClick={refetch}
+            onClick={() => void refetch()}
             disabled={isLoading}
           >
             <RefreshCw className="h-4 w-4" />

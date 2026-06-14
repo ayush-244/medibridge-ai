@@ -5,7 +5,10 @@ import type {
   Referral,
   ReferralAction,
 } from "@/features/referrals/types/referral.types";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
+import { SOCKET_EVENTS } from "@/types/socket";
 
 const actionStatusMap: Record<ReferralAction, ReferralStatus> = {
   accept: "ACCEPTED",
@@ -19,12 +22,16 @@ const actionMessages: Record<ReferralAction, string> = {
   complete: "Referral marked as completed",
 };
 
+interface FetchOptions {
+  silent?: boolean;
+}
+
 interface UseReferralsReturn {
   referrals: Referral[];
   isLoading: boolean;
   error: string | null;
   actionLoading: ReferralAction | null;
-  refetch: () => Promise<void>;
+  refetch: (options?: FetchOptions) => Promise<void>;
   performAction: (id: string, action: ReferralAction) => Promise<boolean>;
   updateReferral: (referral: Referral) => void;
 }
@@ -37,8 +44,10 @@ export function useReferrals(): UseReferralsReturn {
     null,
   );
 
-  const fetchReferrals = useCallback(async () => {
-    setIsLoading(true);
+  const fetchReferrals = useCallback(async (options?: FetchOptions) => {
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -47,13 +56,25 @@ export function useReferrals(): UseReferralsReturn {
     } catch (err) {
       const message =
         (err as { message?: string })?.message || "Failed to load referrals";
-      setError(message);
-      setReferrals([]);
-      showErrorToast(message);
+      if (!options?.silent) {
+        setError(message);
+        setReferrals([]);
+        showErrorToast(message);
+      }
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
+
+  const debouncedRefetch = useDebouncedCallback(
+    () => fetchReferrals({ silent: true }),
+    500,
+  );
+
+  useSocketEvent(SOCKET_EVENTS.REFERRAL_ACCEPTED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.DOCTOR_ASSIGNED, debouncedRefetch);
 
   useEffect(() => {
     fetchReferrals();
@@ -93,7 +114,7 @@ export function useReferrals(): UseReferralsReturn {
         }
 
         showSuccessToast(actionMessages[action]);
-        await fetchReferrals();
+        await fetchReferrals({ silent: true });
         return true;
       } catch (err) {
         setReferrals(previous);

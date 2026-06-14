@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { reservationService } from "@/features/reservations/services/reservation.service";
 import type { Reservation } from "@/features/reservations/types/reservation.types";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { showErrorToast } from "@/lib/toast";
+import { SOCKET_EVENTS } from "@/types/socket";
+
+interface FetchOptions {
+  silent?: boolean;
+}
 
 interface UseReservationsReturn {
   reservations: Reservation[];
   isLoading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  refetch: (options?: FetchOptions) => Promise<void>;
 }
 
 export function useReservations(): UseReservationsReturn {
@@ -15,8 +22,10 @@ export function useReservations(): UseReservationsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchReservations = useCallback(async () => {
-    setIsLoading(true);
+  const fetchReservations = useCallback(async (options?: FetchOptions) => {
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -26,13 +35,25 @@ export function useReservations(): UseReservationsReturn {
       const message =
         (err as { message?: string })?.message ||
         "Failed to load reservations";
-      setError(message);
-      setReservations([]);
-      showErrorToast(message);
+      if (!options?.silent) {
+        setError(message);
+        setReservations([]);
+        showErrorToast(message);
+      }
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
+
+  const debouncedRefetch = useDebouncedCallback(
+    () => fetchReservations({ silent: true }),
+    500,
+  );
+
+  useSocketEvent(SOCKET_EVENTS.BED_RESERVED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.RESERVATION_EXPIRED, debouncedRefetch);
 
   useEffect(() => {
     fetchReservations();

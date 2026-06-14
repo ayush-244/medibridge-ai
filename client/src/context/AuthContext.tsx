@@ -53,10 +53,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     const newToken = await authService.login(credentials);
-    const profile = await authService.getProfile();
-
-    persistAuth(newToken, profile);
+  
     setToken(newToken);
+  
+    localStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ token: newToken })
+    );
+  
+    const profile = await authService.getProfile();
+  
+    persistAuth(newToken, profile);
     setUser(profile);
   }, []);
 

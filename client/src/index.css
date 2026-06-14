@@ -45,3 +45,41 @@
     @apply border-r-2 border-primary bg-sidebar-accent text-primary;
   }
 }
+
+/* ===== Sonner Premium SaaS Notifications ===== */
+
+[data-sonner-toast] {
+  border-radius: 14px !important;
+  transition:
+    transform 0.4s ease,
+    opacity 0.4s ease,
+    box-shadow 0.4s ease !important;
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.08),
+    0 4px 10px rgba(0, 0, 0, 0.04) !important;
+
+  backdrop-filter: blur(12px);
+}
+
+[data-sonner-toast][data-mounted="true"] {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+[data-sonner-toast][data-mounted="false"] {
+  opacity: 0;
+  transform: translateX(30px) translateY(-10px);
+}
+
+[data-sonner-toast]:hover {
+  transform: translateX(-2px);
+}
+
+[data-sonner-toast] [data-close-button] {
+  transition: all 0.2s ease;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  transform: scale(1.1);
+}

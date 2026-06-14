@@ -1,29 +1,28 @@
 import { useCallback, useEffect, useState } from "react";
-import { dashboardService } from "@/features/dashboard/services/dashboard.service";
-import type { DashboardStatsResponse } from "@/features/dashboard/types/dashboard.types";
+import { activityService } from "@/features/dashboard/services/activity.service";
+import type { ActivityItem } from "@/features/dashboard/types/dashboard.types";
+import { mapActivityLogs } from "@/features/dashboard/utils/activityMappers";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import { showErrorToast } from "@/lib/toast";
 import { SOCKET_EVENTS } from "@/types/socket";
 
 interface FetchOptions {
   silent?: boolean;
 }
 
-interface UseDashboardReturn {
-  stats: DashboardStatsResponse | null;
+interface UseActivitiesReturn {
+  activities: ActivityItem[];
   isLoading: boolean;
   error: string | null;
-  isEmpty: boolean;
   refetch: (options?: FetchOptions) => Promise<void>;
 }
 
-export function useDashboard(enabled = true): UseDashboardReturn {
-  const [stats, setStats] = useState<DashboardStatsResponse | null>(null);
+export function useActivities(enabled = true): UseActivitiesReturn {
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = useCallback(
+  const fetchActivities = useCallback(
     async (options?: FetchOptions) => {
       if (!enabled) {
         setIsLoading(false);
@@ -36,16 +35,14 @@ export function useDashboard(enabled = true): UseDashboardReturn {
       setError(null);
 
       try {
-        const response = await dashboardService.getStats();
-        setStats(response);
+        const logs = await activityService.getAll();
+        setActivities(mapActivityLogs(logs));
       } catch (err) {
         const message =
           (err as { message?: string })?.message ||
-          "Failed to load dashboard data";
+          "Failed to load activity feed";
         if (!options?.silent) {
           setError(message);
-          setStats(null);
-          showErrorToast(message);
         }
       } finally {
         if (!options?.silent) {
@@ -57,28 +54,23 @@ export function useDashboard(enabled = true): UseDashboardReturn {
   );
 
   const debouncedRefetch = useDebouncedCallback(
-    () => fetchStats({ silent: true }),
+    () => fetchActivities({ silent: true }),
     500,
   );
 
-  useSocketEvent(SOCKET_EVENTS.DASHBOARD_UPDATED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.REFERRAL_ACCEPTED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.BED_RESERVED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.RESERVATION_EXPIRED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.DOCTOR_ASSIGNED, debouncedRefetch, enabled);
 
   useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
-
-  const isEmpty =
-    !isLoading &&
-    !error &&
-    enabled &&
-    stats !== null &&
-    Object.keys(stats.data).length === 0;
+    fetchActivities();
+  }, [fetchActivities]);
 
   return {
-    stats,
+    activities,
     isLoading,
     error,
-    isEmpty,
-    refetch: fetchStats,
+    refetch: fetchActivities,
   };
 }

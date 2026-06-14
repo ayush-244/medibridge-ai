@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Bell, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { breadcrumbLabels } from "@/lib/navigation";
 import { ROUTES } from "@/lib/routes";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,7 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { ConnectionStatusIndicator } from "@/components/layout/ConnectionStatusIndicator";
+import { NotificationBell } from "@/features/notifications";
 
 interface TopNavbarProps {
   collapsed: boolean;
@@ -86,6 +87,8 @@ export function TopNavbar({ onMobileMenuOpen }: TopNavbarProps) {
       </nav>
 
       <div className="ml-auto flex items-center gap-2 sm:gap-3">
+        <ConnectionStatusIndicator />
+
         <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
           <Input
@@ -95,15 +98,7 @@ export function TopNavbar({ onMobileMenuOpen }: TopNavbarProps) {
           />
         </div>
 
-        <Button variant="ghost" size="icon" className="relative" disabled>
-          <Bell className="h-5 w-5" />
-          <Badge
-            variant="danger"
-            className="absolute -right-1 -top-1 h-5 min-w-5 justify-center px-1 text-[10px]"
-          >
-            0
-          </Badge>
-        </Button>
+        <NotificationBell />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

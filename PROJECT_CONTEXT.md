@@ -18,7 +18,7 @@
 - **Runtime:** Node.js (CommonJS)
 - **Framework:** Express 5
 - **Database:** MongoDB (Mongoose)
-- **Realtime:** Socket.IO (server initialized; client integration pending — Phase 8)
+- **Realtime:** Socket.IO (server + client integrated — Phase 8)
 - **Auth:** JWT (`Bearer` token), bcrypt password hashing
 - **Other:** Helmet, CORS, Morgan, node-cron (reservation expiry job)
 
@@ -77,7 +77,8 @@ VITE_SOCKET_URL=http://localhost:5000
 
 - **KPI cards:** Role-aware stats for `SUPER_ADMIN` and `HOSPITAL_ADMIN`
 - **Dashboard stats:** `GET /dashboard/stats` via `useDashboard` hook
-- **Activity feed placeholder:** Static data in `ActivityFeed.tsx` with banner noting Phase 8 API wiring
+- **Activity feed:** Live data from `GET /activities` with socket-triggered refresh
+- **Live dashboard refresh:** Debounced refetch on `dashboardUpdated` socket event
 
 > Doctors and referral coordinators can reach `/dashboard` in the nav but see a “no access” message — only `SUPER_ADMIN` / `HOSPITAL_ADMIN` fetch live stats (`supportsDashboardApi`).
 
@@ -117,9 +118,18 @@ VITE_SOCKET_URL=http://localhost:5000
 - **Shared analytics primitives:** `components/analytics/` (`StatCard`, `MetricsGrid`, `SectionCard`)
 - **API:** Parallel fetch of five report endpoints via `useReports`
 
+### Phase 8 — Notifications + Socket.IO
+
+- **Socket infrastructure:** Singleton connection via `socket.service.ts`, `SocketProvider`, `useSocket`, `useSocketEvent`
+- **Connection status:** Navbar indicator (Connected / Reconnecting / Offline)
+- **Notifications:** Bell with unread badge, slide-over drawer, full `/notifications` page
+- **API:** `GET /notifications`, `PATCH /notifications/:id/read`, `GET /activities`
+- **Realtime toasts:** Sonner alerts for all six socket events via `RealtimeToasts`
+- **Live updates:** Dashboard stats, referrals, reservations, and activity feed refresh on socket events (debounced, silent refetch)
+- **Dependency:** `socket.io-client` in `client/package.json`
+
 ### Placeholder Pages (routed, not yet implemented)
 
-- **Notifications** (`/notifications`) — `PagePlaceholder` only
 - **Settings** (`/settings`) — `PagePlaceholder` only
 
 ---
@@ -134,17 +144,18 @@ medibridge-ai/
 │       ├── components/
 │       │   ├── analytics/           # Shared report/analytics layout primitives
 │       │   ├── common/              # Cross-feature reusable UI
-│       │   ├── layout/              # Sidebar, TopNavbar
+│       │   ├── layout/              # Sidebar, TopNavbar, ConnectionStatus, RealtimeToasts
 │       │   └── ui/                  # shadcn/ui primitives (Button, Card, Badge, …)
 │       ├── context/
-│       │   └── AuthContext.tsx      # Auth state, login/logout, token persistence
+│       │   ├── AuthContext.tsx      # Auth state, login/logout, token persistence
+│       │   └── SocketContext.tsx    # Socket.IO provider, connection status, lastEvent
 │       ├── features/                # Feature modules (primary organization unit)
 │       │   ├── dashboard/
 │       │   │   ├── components/      # DashboardView, StatCard, ActivityFeed, skeletons
-│       │   │   ├── hooks/           # useDashboard
-│       │   │   ├── services/        # dashboard.service.ts
+│       │   │   ├── hooks/           # useDashboard, useActivities
+│       │   │   ├── services/        # dashboard.service.ts, activity.service.ts
 │       │   │   ├── types/
-│       │   │   ├── utils/           # dashboardMappers
+│       │   │   ├── utils/           # dashboardMappers, activityMappers
 │       │   │   └── index.ts
 │       │   ├── hospitals/
 │       │   │   ├── components/      # HospitalsView, HospitalCard, HospitalDetailSheet
@@ -174,14 +185,21 @@ medibridge-ai/
 │       │   │   ├── types/
 │       │   │   ├── utils/
 │       │   │   └── index.ts
-│       │   └── reports/
-│       │       ├── components/      # ReportsView, section components, DistributionChart
-│       │       ├── hooks/           # useReports
-│       │       ├── services/
+│       │   ├── reports/
+│       │   │   ├── components/      # ReportsView, section components, DistributionChart
+│       │   │   ├── hooks/           # useReports
+│       │   │   ├── services/
+│       │   │   ├── types/
+│       │   │   ├── utils/
+│       │   │   └── index.ts
+│       │   └── notifications/
+│       │       ├── components/      # NotificationBell, NotificationDrawer, NotificationsView
+│       │       ├── context/         # NotificationsProvider
+│       │       ├── hooks/           # useNotifications
+│       │       ├── services/        # notification.service.ts
 │       │       ├── types/
-│       │       ├── utils/
 │       │       └── index.ts
-│       ├── hooks/                   # Global hooks: useAuth, useDebounce, usePagination
+│       ├── hooks/                   # useAuth, useDebounce, usePagination, useSocket, useSocketEvent, useDebouncedCallback
 │       ├── layouts/
 │       │   ├── AppLayout.tsx        # Sidebar + navbar shell
 │       │   └── AuthLayout.tsx       # Login page wrapper
@@ -194,7 +212,7 @@ medibridge-ai/
 │       │   ├── referrals/
 │       │   ├── reservations/
 │       │   ├── reports/
-│       │   ├── notifications/       # Placeholder
+│       │   ├── notifications/       # NotificationsPage → NotificationsView
 │       │   ├── settings/            # Placeholder
 │       │   └── NotFoundPage.tsx
 │       ├── routes/
@@ -203,8 +221,9 @@ medibridge-ai/
 │       │   └── RoleRoute.tsx
 │       ├── services/
 │       │   ├── api.ts               # Shared Axios instance
-│       │   └── auth.service.ts
-│       ├── types/                   # auth.ts, api.ts
+│       │   ├── auth.service.ts
+│       │   └── socket.service.ts    # Singleton Socket.IO client
+│       ├── types/                   # auth.ts, api.ts, socket.ts
 │       ├── App.tsx
 │       └── main.tsx
 │
@@ -230,22 +249,26 @@ medibridge-ai/
 └── PROJECT_CONTEXT.md
 ```
 
-### Realtime (server-side, Phase 8 client pending)
+### Realtime (server + client)
 
 | Location | Purpose |
 |----------|---------|
 | `server/src/config/socket.js` | Socket.IO server setup on HTTP server |
 | `server/src/services/socketEmitter.service.js` | Broadcast helper (`io.emit`) |
-| `client/src/lib/constants.ts` | `SOCKET_URL` constant defined; **no client Socket.IO usage yet** |
+| `client/src/services/socket.service.ts` | Singleton Socket.IO client connection |
+| `client/src/context/SocketContext.tsx` | `SocketProvider` — connection lifecycle, `lastEvent` |
+| `client/src/hooks/useSocket.ts` | Read socket context |
+| `client/src/hooks/useSocketEvent.ts` | Subscribe to events with cleanup |
+| `client/src/types/socket.ts` | Typed event names and payloads |
 
-**Server-emitted events (not yet consumed by frontend):**
+**Server-emitted events (consumed by frontend):**
 
-- `dashboardUpdated`
-- `notificationCreated`
-- `referralAccepted`
-- `bedReserved`
-- `doctorAssigned`
-- `reservationExpired`
+- `dashboardUpdated` → debounced dashboard stats refetch
+- `notificationCreated` → notification list + toast
+- `referralAccepted` → referrals refetch + toast + activity refetch
+- `bedReserved` → reservations refetch + toast + activity refetch
+- `doctorAssigned` → referrals refetch + toast + activity refetch
+- `reservationExpired` → reservations refetch + toast + activity refetch
 
 ---
 
@@ -265,6 +288,14 @@ All client calls go through the shared Axios instance (`baseURL`: `VITE_API_URL`
 | Method | Endpoint | Service | Used By |
 |--------|----------|---------|---------|
 | `GET` | `/dashboard/stats` | `dashboard.service.ts` | `useDashboard` → DashboardView |
+| `GET` | `/activities` | `activity.service.ts` | `useActivities` → ActivityFeed |
+
+### Notifications
+
+| Method | Endpoint | Service | Used By |
+|--------|----------|---------|---------|
+| `GET` | `/notifications` | `notification.service.ts` | `useNotifications` → Bell, Drawer, Page |
+| `PATCH` | `/notifications/:id/read` | `notification.service.ts` | Mark-as-read actions |
 
 ### Hospitals
 
@@ -318,9 +349,6 @@ These exist on the server but have no client service/hook wiring:
 | Doctors | `POST /doctors`, `GET /doctors/hospital/:hospitalId` |
 | Referrals | `POST /referrals` |
 | Reports | `GET /reports/hospital/:hospitalId` (method exists in `report.service.ts` but unused) |
-| Reservations | — (read-only connected) |
-| Notifications | `GET /notifications`, `PATCH /notifications/:id/read` |
-| Activities | `GET /activities` |
 | Doctor dashboard | `GET /doctor-dashboard` |
 | Recommendations | `GET /recommendations/best-hospital`, `/nearby`, etc. |
 | AI | `POST /ai/triage`, etc. |
@@ -357,7 +385,7 @@ These exist on the server but have no client service/hook wiring:
 | Component | Purpose |
 |-----------|---------|
 | `Sidebar` | Role-filtered nav, collapse, mobile overlay |
-| `TopNavbar` | Mobile menu trigger, breadcrumbs, user dropdown |
+| `TopNavbar` | Mobile menu trigger, breadcrumbs, notification bell, connection status, user dropdown |
 
 ### `components/ui/` — shadcn/ui primitives
 
@@ -392,6 +420,9 @@ These exist on the server but have no client service/hook wiring:
 | `useAuth` | Read AuthContext (user, login, logout) |
 | `useDebounce` | Debounce search inputs |
 | `usePagination` | Client-side page slicing |
+| `useDebouncedCallback` | Debounce callbacks (socket refetch) |
+| `useSocket` | Read SocketContext (socket, isConnected, lastEvent) |
+| `useSocketEvent` | Subscribe to typed socket events with cleanup |
 
 ### Layouts
 
@@ -437,38 +468,15 @@ These exist on the server but have no client service/hook wiring:
 
 ## NEXT PHASE
 
-### Phase 8 — Notifications + Socket.IO
+### Phase 9 — Settings + Profile (suggested)
 
-**Goals:**
+- Replace `SettingsPage` placeholder
+- User profile editing, notification preferences
+- Optional: role-specific settings panels
 
-1. **Client Socket.IO integration**
-   - Connect using `SOCKET_URL` from env/constants
-   - Subscribe to server events: `notificationCreated`, `dashboardUpdated`, `referralAccepted`, `bedReserved`, `doctorAssigned`, `reservationExpired`
-   - Consider `SocketContext` or feature-scoped hook
+**Backend endpoints available but not yet connected:**
 
-2. **Notifications UI**
-   - Replace `NotificationsPage` placeholder
-   - Wire `GET /notifications` and `PATCH /notifications/:id/read`
-   - Navbar notification bell with unread count/badge
-   - Real-time notification list updates via socket
-
-3. **Activity feed**
-   - Replace static data in `ActivityFeed.tsx` with `GET /activities`
-   - Optional live updates via socket events
-
-4. **Live dashboard refresh**
-   - Refetch dashboard stats on `dashboardUpdated` socket event
-
-**Backend already in place:**
-
-- Socket.IO initialized in `server.js`
-- `Notification` model + `notification.service.js`
-- `ActivityLog` model + `activity.routes.js`
-- Event emission in referral acceptance, reservation expiry, and notification creation flows
-
-**Dependencies to add (client):**
-
-- `socket.io-client` (already on server; not yet in `client/package.json`)
+- `POST /auth/register`, admin routes, AI/triage, smart referrals, recommendations
 
 ---
 
@@ -485,7 +493,7 @@ These exist on the server but have no client service/hook wiring:
 | `/doctors` | Doctors | Super Admin, Hospital Admin |
 | `/reservations` | Reservations | Super Admin, Hospital Admin, Doctor |
 | `/reports` | Reports & Analytics | Super Admin |
-| `/notifications` | Notifications (stub) | All authenticated roles |
+| `/notifications` | Notifications | All authenticated roles |
 | `/settings` | Settings (stub) | All authenticated roles |
 | `/unauthorized` | Unauthorized | Public |
 
