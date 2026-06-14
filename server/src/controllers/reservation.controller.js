@@ -9,7 +9,7 @@ const {
 
 const populateReservation = (query) =>
   query
-    .populate("doctor", "name specialization")
+    .populate("doctor", "name specialization profilePhoto")
     .populate("hospital", "name city")
     .populate("referral", "patientName");
 

@@ -45,6 +45,20 @@ export function useDoctorMutations() {
     [],
   );
 
+  const uploadDoctorPhoto = useCallback(async (file: File) => {
+    setIsSubmitting(true);
+    try {
+      return await doctorService.uploadPhoto(file);
+    } catch (err) {
+      showErrorToast(
+        (err as { message?: string })?.message || "Failed to upload photo",
+      );
+      return null;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, []);
+
   const toggleAvailability = useCallback(
     async (doctor: Doctor) => {
       const newStatus = doctor.status === "AVAILABLE" ? "OFF_DUTY" : "AVAILABLE";
@@ -53,5 +67,11 @@ export function useDoctorMutations() {
     [updateDoctor],
   );
 
-  return { isSubmitting, createDoctor, updateDoctor, toggleAvailability };
+  return {
+    isSubmitting,
+    createDoctor,
+    updateDoctor,
+    uploadDoctorPhoto,
+    toggleAvailability,
+  };
 }

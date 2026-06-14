@@ -23,6 +23,7 @@ export interface UserDoctorProfile {
   _id: string;
   name: string;
   specialization: string;
+  profilePhoto?: string | null;
   experience?: number;
   hospital?: UserHospital | string;
 }

@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { DoctorStatusBadge } from "@/components/common/StatusBadge";
+import { DoctorAvatar } from "@/components/common/DoctorAvatar";
 import {
   getDoctorHospitalCity,
   getDoctorHospitalName,
@@ -87,9 +88,14 @@ export function DoctorDetailDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <div className="flex items-start justify-between gap-3 pr-6">
-            <div>
-              <DialogTitle>{doctor.name}</DialogTitle>
-              <DialogDescription>{doctor.specialization}</DialogDescription>
+            <div className="flex min-w-0 items-center gap-4">
+              <DoctorAvatar doctor={doctor} size="xl" />
+              <div className="min-w-0">
+                <DialogTitle>{doctor.name}</DialogTitle>
+                <DialogDescription>
+                  {doctor.specialization} - {hospitalName}
+                </DialogDescription>
+              </div>
             </div>
             <DoctorStatusBadge status={doctor.status} />
           </div>

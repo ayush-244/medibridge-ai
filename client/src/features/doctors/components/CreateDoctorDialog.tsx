@@ -22,13 +22,26 @@ export function CreateDoctorDialog({
   onSuccess,
 }: CreateDoctorDialogProps) {
   const { user } = useAuth();
-  const { isSubmitting, createDoctor } = useDoctorMutations();
+  const { isSubmitting, createDoctor, uploadDoctorPhoto } =
+    useDoctorMutations();
 
   const defaultHospitalId =
     user?.role === "HOSPITAL_ADMIN" ? user.hospital : null;
 
-  const handleSubmit = async (payload: CreateDoctorPayload) => {
-    const doctor = await createDoctor(payload);
+  const handleSubmit = async (
+    payload: CreateDoctorPayload,
+    options: { photoFile: File | null; removePhoto: boolean },
+  ) => {
+    const profilePhoto = options.photoFile
+      ? await uploadDoctorPhoto(options.photoFile)
+      : null;
+
+    if (options.photoFile && !profilePhoto) return;
+
+    const doctor = await createDoctor({
+      ...payload,
+      profilePhoto: profilePhoto ?? payload.profilePhoto,
+    });
     if (doctor) {
       onOpenChange(false);
       onSuccess?.();
@@ -50,7 +63,7 @@ export function CreateDoctorDialog({
           showHospitalSelect={user?.role === "SUPER_ADMIN"}
           isSubmitting={isSubmitting}
           submitLabel="Create Doctor"
-          onSubmit={(payload) => void handleSubmit(payload)}
+          onSubmit={(payload, options) => void handleSubmit(payload, options)}
           onCancel={() => onOpenChange(false)}
         />
       </DialogContent>

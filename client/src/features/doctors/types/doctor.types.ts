@@ -11,6 +11,7 @@ export interface Doctor {
   name: string;
   email?: string;
   specialization: string;
+  profilePhoto?: string | null;
   experience?: number;
   hospital: DoctorHospital | string;
   status: DoctorStatus;
@@ -25,6 +26,7 @@ export interface CreateDoctorPayload {
   name: string;
   email?: string;
   specialization: string;
+  profilePhoto?: string | null;
   experience?: number;
   hospital: string;
   status?: DoctorStatus;
@@ -34,6 +36,7 @@ export interface UpdateDoctorPayload {
   name?: string;
   email?: string;
   specialization?: string;
+  profilePhoto?: string | null;
   experience?: number;
   hospital?: string;
   status?: DoctorStatus;
@@ -43,6 +46,7 @@ export interface DoctorFormValues {
   name: string;
   email: string;
   specialization: string;
+  profilePhoto: string | null;
   experience: string;
   hospital: string;
   status: DoctorStatus;

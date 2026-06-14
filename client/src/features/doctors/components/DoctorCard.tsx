@@ -1,7 +1,8 @@
-import { MapPin, ArrowRight, Stethoscope } from "lucide-react";
+import { MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResourceCard, ResourceMetric } from "@/components/common/ResourceCard";
 import { DoctorStatusBadge } from "@/components/common/StatusBadge";
+import { DoctorAvatar } from "@/components/common/DoctorAvatar";
 import {
   getDoctorHospitalCity,
   getDoctorHospitalName,
@@ -31,9 +32,7 @@ export function DoctorCard({
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <Stethoscope className="h-4 w-4" />
-            </div>
+            <DoctorAvatar doctor={doctor} size="md" />
             <div className="min-w-0">
               <h3 className="truncate font-semibold text-text-primary">
                 {doctor.name}

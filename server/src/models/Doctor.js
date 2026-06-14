@@ -20,6 +20,11 @@ const doctorSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    profilePhoto: {
+      type: String,
+      default: null,
+    },
+
     experience: {
       type: Number,
       min: 0,

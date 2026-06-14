@@ -70,6 +70,7 @@ export function toDoctorFormValues(doctor?: Doctor): DoctorFormValues {
       name: "",
       email: "",
       specialization: "",
+      profilePhoto: null,
       experience: "",
       hospital: "",
       status: "AVAILABLE",
@@ -80,6 +81,7 @@ export function toDoctorFormValues(doctor?: Doctor): DoctorFormValues {
     name: doctor.name,
     email: doctor.email || "",
     specialization: doctor.specialization,
+    profilePhoto: doctor.profilePhoto ?? null,
     experience: doctor.experience != null ? String(doctor.experience) : "",
     hospital:
       typeof doctor.hospital === "string"
@@ -115,6 +117,7 @@ export function toCreateDoctorPayload(
     name: values.name.trim(),
     email: values.email.trim() || undefined,
     specialization: values.specialization.trim(),
+    profilePhoto: values.profilePhoto,
     experience: values.experience ? Number(values.experience) : undefined,
     hospital: values.hospital,
     status: values.status,

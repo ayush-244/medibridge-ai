@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const path = require("path");
 
 const authRoutes = require("./routes/auth.routes");
 const hospitalRoutes = require("./routes/hospital.routes");
@@ -22,6 +23,7 @@ const adminRoutes = require(
   "./routes/admin.routes"
 );
 const userRoutes = require("./routes/user.routes");
+const uploadRoutes = require("./routes/upload.routes");
 
 const doctorDashboardRoutes = require(
   "./routes/doctorDashboard.routes"
@@ -37,6 +39,14 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../uploads"), {
+    setHeaders: (res) => {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  }),
+);
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -68,6 +78,7 @@ app.use(
 );
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/upload", uploadRoutes);
 app.use(
   "/api/reports",
   reportRoutes

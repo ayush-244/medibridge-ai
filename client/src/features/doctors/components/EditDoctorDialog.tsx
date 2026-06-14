@@ -27,11 +27,26 @@ export function EditDoctorDialog({
   onSuccess,
 }: EditDoctorDialogProps) {
   const { user } = useAuth();
-  const { isSubmitting, updateDoctor } = useDoctorMutations();
+  const { isSubmitting, updateDoctor, uploadDoctorPhoto } =
+    useDoctorMutations();
 
-  const handleSubmit = async (payload: CreateDoctorPayload) => {
+  const handleSubmit = async (
+    payload: CreateDoctorPayload,
+    options: { photoFile: File | null; removePhoto: boolean },
+  ) => {
     if (!doctor) return;
-    const updated = await updateDoctor(doctor._id, payload);
+
+    const uploadedPhoto = options.photoFile
+      ? await uploadDoctorPhoto(options.photoFile)
+      : null;
+
+    if (options.photoFile && !uploadedPhoto) return;
+
+    const updated = await updateDoctor(doctor._id, {
+      ...payload,
+      profilePhoto:
+        uploadedPhoto ?? (options.removePhoto ? null : payload.profilePhoto),
+    });
     if (updated) {
       onOpenChange(false);
       onSuccess?.();
@@ -54,7 +69,7 @@ export function EditDoctorDialog({
             showHospitalSelect={user?.role === "SUPER_ADMIN"}
             isSubmitting={isSubmitting}
             submitLabel="Save Changes"
-            onSubmit={(payload) => void handleSubmit(payload)}
+            onSubmit={(payload, options) => void handleSubmit(payload, options)}
             onCancel={() => onOpenChange(false)}
           />
         )}

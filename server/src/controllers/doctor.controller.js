@@ -126,14 +126,22 @@ const updateDoctor = async (req, res) => {
       });
     }
 
-    const { name, email, specialization, experience, hospital, status } =
-      req.body;
+    const {
+      name,
+      email,
+      specialization,
+      experience,
+      hospital,
+      status,
+      profilePhoto,
+    } = req.body;
 
     if (name) doctor.name = name;
     if (email !== undefined) doctor.email = email;
     if (specialization) doctor.specialization = specialization;
     if (experience !== undefined) doctor.experience = experience;
     if (status) doctor.status = status;
+    if (profilePhoto !== undefined) doctor.profilePhoto = profilePhoto || null;
 
     if (hospital && req.user.role === "SUPER_ADMIN") {
       const oldHospitalId = doctor.hospital;

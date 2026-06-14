@@ -1,6 +1,7 @@
 import { Eye, MapPin, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DoctorAvatar } from "@/components/common/DoctorAvatar";
 import { ReservationStatusBadge } from "@/components/common/StatusBadge";
 import { ExpiryCountdown } from "@/features/reservations/components/ExpiryCountdown";
 import {
@@ -46,7 +47,11 @@ export function ReservationCard({
       </div>
 
       <div className="mt-3 flex items-center gap-1 text-xs text-text-secondary">
-        <Stethoscope className="h-3 w-3" />
+        {typeof reservation.doctor === "string" ? (
+          <Stethoscope className="h-3 w-3" />
+        ) : (
+          <DoctorAvatar doctor={reservation.doctor} size="sm" />
+        )}
         {getDoctorName(reservation.doctor)}
       </div>
 
@@ -123,7 +128,12 @@ export function ReservationTable({
                     {getHospitalName(reservation.hospital)}
                   </td>
                   <td className="px-4 py-3 text-sm text-text-secondary">
-                    {getDoctorName(reservation.doctor)}
+                    <div className="flex items-center gap-2">
+                      {typeof reservation.doctor !== "string" && (
+                        <DoctorAvatar doctor={reservation.doctor} size="sm" />
+                      )}
+                      <span>{getDoctorName(reservation.doctor)}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline">

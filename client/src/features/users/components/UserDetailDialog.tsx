@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { DoctorAvatar } from "@/components/common/DoctorAvatar";
 import { UserStatusBadge } from "@/features/users/components/UserStatusBadge";
 import {
   formatRoleLabel,
@@ -72,6 +73,12 @@ export function UserDetailDialog({
               />
               {user.doctorProfile && (
                 <>
+                  <DetailRow
+                    label="Doctor Photo"
+                    value={
+                      <DoctorAvatar doctor={user.doctorProfile} size="sm" />
+                    }
+                  />
                   <DetailRow
                     label="Specialization"
                     value={user.doctorProfile.specialization}

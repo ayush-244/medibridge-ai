@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { DoctorAvatar } from "@/components/common/DoctorAvatar";
 import { DOCTOR_STATUSES } from "@/lib/constants";
 import {
   SPECIALIZATIONS,
@@ -28,7 +29,10 @@ import type { DoctorStatus } from "@/lib/constants";
 import { showErrorToast } from "@/lib/toast";
 
 function getSpecializationOptions(currentValue: string) {
-  if (!currentValue || SPECIALIZATIONS.includes(currentValue as Specialization)) {
+  if (
+    !currentValue ||
+    SPECIALIZATIONS.includes(currentValue as Specialization)
+  ) {
     return [...SPECIALIZATIONS];
   }
 
@@ -41,9 +45,20 @@ interface DoctorFormProps {
   showHospitalSelect?: boolean;
   isSubmitting: boolean;
   submitLabel: string;
-  onSubmit: (payload: CreateDoctorPayload) => void;
+  onSubmit: (
+    payload: CreateDoctorPayload,
+    options: { photoFile: File | null; removePhoto: boolean },
+  ) => void;
   onCancel: () => void;
 }
+
+const ALLOWED_PHOTO_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+]);
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
 
 export function DoctorForm({
   doctor,
@@ -62,6 +77,30 @@ export function DoctorForm({
     }
     return initial;
   });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
+
+  const currentPhoto = removePhoto ? null : values.profilePhoto;
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
+
+    if (!ALLOWED_PHOTO_TYPES.has(file.type)) {
+      event.target.value = "";
+      showErrorToast("Upload a JPG, JPEG, PNG, or WEBP image");
+      return;
+    }
+
+    if (file.size > MAX_PHOTO_SIZE) {
+      event.target.value = "";
+      showErrorToast("Profile photo must be 5 MB or smaller");
+      return;
+    }
+
+    setPhotoFile(file);
+    setRemovePhoto(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +109,11 @@ export function DoctorForm({
       showErrorToast(error);
       return;
     }
-    onSubmit(toCreateDoctorPayload(values));
+    const payload = toCreateDoctorPayload({
+      ...values,
+      profilePhoto: removePhoto ? null : values.profilePhoto,
+    });
+    onSubmit(payload, { photoFile, removePhoto });
   };
 
   return (
@@ -126,6 +169,54 @@ export function DoctorForm({
               setValues({ ...values, experience: e.target.value })
             }
           />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Profile Photo</label>
+        <div className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center">
+          <DoctorAvatar
+            doctor={{
+              name: values.name || doctor?.name || "Doctor",
+              profilePhoto: currentPhoto,
+            }}
+            size="lg"
+          />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Input
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+              onChange={handlePhotoChange}
+            />
+            <p className="text-xs text-text-secondary">
+              JPG, JPEG, PNG, or WEBP. Max 5 MB.
+            </p>
+            {photoFile && (
+              <p className="truncate text-xs font-medium text-text-primary">
+                Selected: {photoFile.name}
+              </p>
+            )}
+          </div>
+          {doctor?.profilePhoto && !removePhoto && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setPhotoFile(null);
+                setRemovePhoto(true);
+              }}
+            >
+              Remove Photo
+            </Button>
+          )}
+          {removePhoto && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setRemovePhoto(false)}
+            >
+              Undo Remove
+            </Button>
+          )}
         </div>
       </div>
       {showHospitalSelect && (

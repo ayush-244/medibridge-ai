@@ -4,6 +4,7 @@ export interface ReservationDoctor {
   _id: string;
   name: string;
   specialization: string;
+  profilePhoto?: string | null;
 }
 
 export interface ReservationHospital {

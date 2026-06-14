@@ -6,6 +6,12 @@ import type {
   UpdateDoctorPayload,
 } from "@/features/doctors/types/doctor.types";
 
+interface UploadDoctorPhotoResponse {
+  success?: boolean;
+  url?: string;
+  message?: string;
+}
+
 export const doctorService = {
   async getAll(): Promise<Doctor[]> {
     const { data } = await api.get<ApiResponse<Doctor[]>>("/doctors");
@@ -37,6 +43,27 @@ export const doctorService = {
     }
 
     return data.data;
+  },
+
+  async uploadPhoto(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    const { data } = await api.post<UploadDoctorPhotoResponse>(
+      "/upload/doctor-photo",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    if (!data.url) {
+      throw new Error(data.message || "Failed to upload doctor photo");
+    }
+
+    return data.url;
   },
 
   async update(id: string, payload: UpdateDoctorPayload): Promise<Doctor> {

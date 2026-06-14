@@ -9,6 +9,7 @@ import {
   SheetBody,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { DoctorAvatar } from "@/components/common/DoctorAvatar";
 import { ReservationStatusBadge } from "@/components/common/StatusBadge";
 import { ReservationDrawerSkeleton } from "@/features/reservations/components/ReservationDrawerSkeleton";
 import { ExpiryCountdown } from "@/features/reservations/components/ExpiryCountdown";
@@ -172,7 +173,14 @@ export function ReservationDetailDrawer({
                   />
                   <DetailRow
                     label="Doctor"
-                    value={getDoctorName(reservation.doctor)}
+                    value={
+                      <span className="inline-flex items-center justify-end gap-2">
+                        {typeof reservation.doctor !== "string" && (
+                          <DoctorAvatar doctor={reservation.doctor} size="sm" />
+                        )}
+                        {getDoctorName(reservation.doctor)}
+                      </span>
+                    }
                   />
                   <DetailRow
                     label="Specialization"
