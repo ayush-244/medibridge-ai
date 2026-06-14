@@ -66,4 +66,23 @@ export const hospitalService = {
 
     return data.data;
   },
+
+  async uploadLogo(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("logo", file);
+
+    const { data } = await api.post<{
+      success?: boolean;
+      url?: string;
+      message?: string;
+    }>("/upload/hospital-logo", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (!data.url) {
+      throw new Error(data.message || "Failed to upload hospital logo");
+    }
+
+    return data.url;
+  },
 };

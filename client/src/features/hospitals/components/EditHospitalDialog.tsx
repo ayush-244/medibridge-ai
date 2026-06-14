@@ -25,11 +25,27 @@ export function EditHospitalDialog({
   onOpenChange,
   onSuccess,
 }: EditHospitalDialogProps) {
-  const { isSubmitting, updateHospital } = useHospitalMutations();
+  const { isSubmitting, updateHospital, uploadHospitalLogo } =
+    useHospitalMutations();
 
-  const handleSubmit = async (payload: CreateHospitalPayload) => {
+  const handleSubmit = async (
+    payload: CreateHospitalPayload,
+    options: { logoFile: File | null; removeLogo: boolean },
+  ) => {
     if (!hospital) return;
-    const updated = await updateHospital(hospital._id, payload);
+
+    const logo = options.logoFile
+      ? await uploadHospitalLogo(options.logoFile)
+      : options.removeLogo
+        ? null
+        : payload.logo;
+
+    if (options.logoFile && !logo) return;
+
+    const updated = await updateHospital(hospital._id, {
+      ...payload,
+      logo,
+    });
     if (updated) {
       onOpenChange(false);
       onSuccess?.();
@@ -51,7 +67,7 @@ export function EditHospitalDialog({
             hospital={hospital}
             isSubmitting={isSubmitting}
             submitLabel="Save Changes"
-            onSubmit={(payload) => void handleSubmit(payload)}
+            onSubmit={(payload, options) => void handleSubmit(payload, options)}
             onCancel={() => onOpenChange(false)}
           />
         )}

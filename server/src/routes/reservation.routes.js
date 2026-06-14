@@ -17,14 +17,14 @@ const router = express.Router();
 router.get(
   "/",
   authenticateUser,
-  authorize("SUPER_ADMIN", "HOSPITAL_ADMIN"),
+  authorize("SUPER_ADMIN", "HOSPITAL_ADMIN", "DOCTOR"),
   getReservations,
 );
 
 router.get(
   "/:id",
   authenticateUser,
-  authorize("SUPER_ADMIN", "HOSPITAL_ADMIN"),
+  authorize("SUPER_ADMIN", "HOSPITAL_ADMIN", "DOCTOR"),
   getReservationById,
 );
 

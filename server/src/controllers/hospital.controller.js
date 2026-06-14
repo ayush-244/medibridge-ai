@@ -1,6 +1,10 @@
 const Hospital = require("../models/Hospital");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
+const {
+  isValidEmail,
+  isValidPhone,
+} = require("../utils/validators");
 
 const createHospital = async (req, res) => {
   try {
@@ -14,7 +18,42 @@ const createHospital = async (req, res) => {
       totalICUBeds,
       availableICUBeds,
       location,
+      contactNumber,
+      email,
+      logo,
     } = req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Hospital name is required",
+      });
+    }
+
+    const existingHospital = await Hospital.findOne({
+      name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+    });
+
+    if (existingHospital) {
+      return res.status(400).json({
+        success: false,
+        message: "A hospital with this name already exists",
+      });
+    }
+
+    if (email && !isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid hospital email address",
+      });
+    }
+
+    if (contactNumber && !isValidPhone(contactNumber)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid contact phone number (7–15 digits)",
+      });
+    }
 
     // Validation
     if (availableBeds > totalBeds) {
@@ -32,12 +71,13 @@ const createHospital = async (req, res) => {
     }
 
     const hospital = await Hospital.create({
-      name,
+      name: name.trim(),
       address,
       city,
       state,
-      contactNumber: req.body.contactNumber,
-      email: req.body.email,
+      contactNumber,
+      email,
+      logo,
       totalBeds,
       availableBeds,
       totalICUBeds,
@@ -202,14 +242,46 @@ const updateHospital = async (req, res) => {
       availableBeds,
       totalICUBeds,
       availableICUBeds,
+      logo,
     } = req.body;
 
-    if (name) hospital.name = name;
+    if (name) {
+      const duplicate = await Hospital.findOne({
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+        _id: { $ne: hospital._id },
+      });
+
+      if (duplicate) {
+        return res.status(400).json({
+          success: false,
+          message: "A hospital with this name already exists",
+        });
+      }
+
+      hospital.name = name.trim();
+    }
     if (address) hospital.address = address;
     if (city) hospital.city = city;
     if (state) hospital.state = state;
-    if (contactNumber !== undefined) hospital.contactNumber = contactNumber;
-    if (email !== undefined) hospital.email = email;
+    if (contactNumber !== undefined) {
+      if (contactNumber && !isValidPhone(contactNumber)) {
+        return res.status(400).json({
+          success: false,
+          message: "Enter a valid contact phone number (7–15 digits)",
+        });
+      }
+      hospital.contactNumber = contactNumber;
+    }
+    if (email !== undefined) {
+      if (email && !isValidEmail(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Enter a valid hospital email address",
+        });
+      }
+      hospital.email = email;
+    }
+    if (logo !== undefined) hospital.logo = logo || null;
     if (totalBeds !== undefined) hospital.totalBeds = totalBeds;
     if (totalICUBeds !== undefined) hospital.totalICUBeds = totalICUBeds;
     if (availableBeds !== undefined) hospital.availableBeds = availableBeds;

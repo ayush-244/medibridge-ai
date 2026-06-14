@@ -1,4 +1,5 @@
 import type { HospitalCapacityStatus } from "@/lib/constants";
+import { getEmailError, getPhoneError } from "@/lib/validation";
 import type {
   CreateHospitalPayload,
   Hospital,
@@ -60,6 +61,7 @@ export function toHospitalFormValues(hospital?: Hospital): HospitalFormValues {
       state: "",
       contactNumber: "",
       email: "",
+      logo: null,
       totalBeds: "",
       availableBeds: "",
       totalICUBeds: "",
@@ -74,6 +76,7 @@ export function toHospitalFormValues(hospital?: Hospital): HospitalFormValues {
     state: hospital.state,
     contactNumber: hospital.contactNumber || "",
     email: hospital.email || "",
+    logo: hospital.logo ?? null,
     totalBeds: String(hospital.totalBeds),
     availableBeds: String(hospital.availableBeds),
     totalICUBeds: String(hospital.totalICUBeds),
@@ -109,8 +112,14 @@ export function validateHospitalForm(values: HospitalFormValues): string | null 
     return "Available ICU beds cannot exceed total ICU beds";
   }
 
-  if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-    return "Enter a valid email address";
+  if (values.email) {
+    const emailError = getEmailError(values.email);
+    if (emailError) return emailError;
+  }
+
+  if (values.contactNumber) {
+    const phoneError = getPhoneError(values.contactNumber);
+    if (phoneError) return phoneError;
   }
 
   return null;
@@ -126,6 +135,7 @@ export function toCreateHospitalPayload(
     state: values.state.trim(),
     contactNumber: values.contactNumber.trim() || undefined,
     email: values.email.trim() || undefined,
+    logo: values.logo,
     totalBeds: Number(values.totalBeds),
     availableBeds: Number(values.availableBeds),
     totalICUBeds: Number(values.totalICUBeds),

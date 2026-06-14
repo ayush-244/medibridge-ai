@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,12 +10,18 @@ import {
   SheetBody,
 } from "@/components/ui/sheet";
 import { HospitalStatusBadge } from "@/components/common/StatusBadge";
+import { HospitalAvatar } from "@/components/common/HospitalAvatar";
+import { HospitalAnalyticsTab } from "@/features/hospitals/components/HospitalAnalyticsTab";
+import { HospitalDoctorsTab } from "@/features/hospitals/components/HospitalDoctorsTab";
 import {
   getBedOccupancyRate,
   getHospitalCapacityStatus,
   getIcuOccupancyRate,
 } from "@/features/hospitals/utils/hospitalUtils";
 import type { Hospital } from "@/features/hospitals/types/hospital.types";
+import { cn } from "@/lib/utils";
+
+type HospitalDetailTab = "overview" | "doctors" | "analytics";
 
 interface DetailRowProps {
   label: string;
@@ -56,6 +63,12 @@ function DetailSection({
   );
 }
 
+const TABS: { id: HospitalDetailTab; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "doctors", label: "Doctors" },
+  { id: "analytics", label: "Analytics" },
+];
+
 interface HospitalDetailSheetProps {
   hospital: Hospital | null;
   isLoading: boolean;
@@ -73,10 +86,18 @@ export function HospitalDetailSheet({
   onEdit,
   onUpdateBeds,
 }: HospitalDetailSheetProps) {
+  const [activeTab, setActiveTab] = useState<HospitalDetailTab>("overview");
   const status = hospital ? getHospitalCapacityStatus(hospital) : null;
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      setActiveTab("overview");
+    }
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="right" className="sm:max-w-lg">
         {isLoading ? (
           <div className="flex h-full items-center justify-center">
@@ -86,90 +107,108 @@ export function HospitalDetailSheet({
           <>
             <SheetHeader>
               <div className="flex items-start justify-between gap-3 pr-8">
-                <div>
-                  <SheetTitle>{hospital.name}</SheetTitle>
-                  <SheetDescription>
-                    {hospital.city}, {hospital.state}
-                  </SheetDescription>
+                <div className="flex items-start gap-3">
+                  <HospitalAvatar hospital={hospital} size="lg" />
+                  <div>
+                    <SheetTitle>{hospital.name}</SheetTitle>
+                    <SheetDescription>
+                      {hospital.city}, {hospital.state}
+                    </SheetDescription>
+                  </div>
                 </div>
                 {status && <HospitalStatusBadge status={status} />}
               </div>
             </SheetHeader>
 
+            <div className="mt-4 flex gap-1 border-b border-border px-6">
+              {TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    "px-3 py-2 text-sm font-medium transition-colors",
+                    activeTab === tab.id
+                      ? "border-b-2 border-primary text-primary"
+                      : "text-text-secondary hover:text-text-primary",
+                  )}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
             <SheetBody className="space-y-6">
-              <DetailSection title="Hospital Information">
-                <DetailRow label="Address" value={hospital.address} />
-                <DetailRow
-                  label="Location"
-                  value={`${hospital.city}, ${hospital.state}`}
-                />
-                {hospital.contactNumber && (
-                  <DetailRow label="Contact" value={hospital.contactNumber} />
-                )}
-                {hospital.email && (
-                  <DetailRow label="Email" value={hospital.email} />
-                )}
-                <DetailRow
-                  label="Coordinates"
-                  value={
-                    hospital.location?.latitude != null
-                      ? `${hospital.location.latitude}, ${hospital.location.longitude}`
-                      : "Not configured"
-                  }
-                />
-              </DetailSection>
+              {activeTab === "overview" && (
+                <>
+                  <DetailSection title="Hospital Information">
+                    <DetailRow label="Address" value={hospital.address} />
+                    <DetailRow
+                      label="Location"
+                      value={`${hospital.city}, ${hospital.state}`}
+                    />
+                    {hospital.contactNumber && (
+                      <DetailRow label="Contact" value={hospital.contactNumber} />
+                    )}
+                    {hospital.email && (
+                      <DetailRow label="Email" value={hospital.email} />
+                    )}
+                    <DetailRow
+                      label="Coordinates"
+                      value={
+                        hospital.location?.latitude != null
+                          ? `${hospital.location.latitude}, ${hospital.location.longitude}`
+                          : "Not configured"
+                      }
+                    />
+                  </DetailSection>
 
-              <DetailSection title="Capacity Information">
-                <DetailRow
-                  label="Total Beds"
-                  value={hospital.totalBeds}
-                />
-                <DetailRow
-                  label="Available Beds"
-                  value={hospital.availableBeds}
-                  highlight
-                />
-                <DetailRow
-                  label="Total ICU Beds"
-                  value={hospital.totalICUBeds}
-                />
-                <DetailRow
-                  label="Available ICU Beds"
-                  value={hospital.availableICUBeds}
-                  highlight
-                />
-              </DetailSection>
+                  <DetailSection title="Capacity Information">
+                    <DetailRow label="Total Beds" value={hospital.totalBeds} />
+                    <DetailRow
+                      label="Available Beds"
+                      value={hospital.availableBeds}
+                      highlight
+                    />
+                    <DetailRow
+                      label="Total ICU Beds"
+                      value={hospital.totalICUBeds}
+                    />
+                    <DetailRow
+                      label="Available ICU Beds"
+                      value={hospital.availableICUBeds}
+                      highlight
+                    />
+                  </DetailSection>
 
-              <DetailSection title="Operational Metrics">
-                <DetailRow
-                  label="Bed Occupancy"
-                  value={getBedOccupancyRate(hospital)}
-                  highlight
-                />
-                <DetailRow
-                  label="ICU Occupancy"
-                  value={getIcuOccupancyRate(hospital)}
-                />
-                <DetailRow
-                  label="General Availability"
-                  value={`${hospital.availableBeds} / ${hospital.totalBeds}`}
-                />
-              </DetailSection>
+                  <DetailSection title="Operational Metrics">
+                    <DetailRow
+                      label="Bed Occupancy"
+                      value={getBedOccupancyRate(hospital)}
+                      highlight
+                    />
+                    <DetailRow
+                      label="ICU Occupancy"
+                      value={getIcuOccupancyRate(hospital)}
+                    />
+                    <DetailRow
+                      label="General Availability"
+                      value={`${hospital.availableBeds} / ${hospital.totalBeds}`}
+                    />
+                  </DetailSection>
+                </>
+              )}
 
-              <DetailSection title="Available Resources">
-                <DetailRow
-                  label="Registered Doctors"
-                  value={hospital.doctors?.length ?? 0}
-                  highlight
-                />
-                <DetailRow
-                  label="ICU Availability"
-                  value={`${hospital.availableICUBeds} beds free`}
-                />
-              </DetailSection>
+              {activeTab === "doctors" && (
+                <HospitalDoctorsTab hospitalId={hospital._id} />
+              )}
+
+              {activeTab === "analytics" && (
+                <HospitalAnalyticsTab hospitalId={hospital._id} />
+              )}
             </SheetBody>
 
-            {(onEdit || onUpdateBeds) && (
+            {(onEdit || onUpdateBeds) && activeTab === "overview" && (
               <div className="border-t border-border p-6 flex gap-2">
                 {onEdit && (
                   <Button className="flex-1" onClick={onEdit}>

@@ -10,6 +10,17 @@ import { showErrorToast, showSuccessToast } from "@/lib/toast";
 export function useHospitalMutations() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const uploadHospitalLogo = useCallback(async (file: File) => {
+    try {
+      return await hospitalService.uploadLogo(file);
+    } catch (err) {
+      showErrorToast(
+        (err as { message?: string })?.message || "Failed to upload logo",
+      );
+      return null;
+    }
+  }, []);
+
   const createHospital = useCallback(async (payload: CreateHospitalPayload) => {
     setIsSubmitting(true);
     try {
@@ -68,7 +79,7 @@ export function useHospitalMutations() {
     [],
   );
 
-  return { isSubmitting, createHospital, updateHospital, updateBeds };
+  return { isSubmitting, createHospital, updateHospital, updateBeds, uploadHospitalLogo };
 }
 
 export type { Hospital };

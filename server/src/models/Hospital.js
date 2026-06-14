@@ -34,6 +34,11 @@ const hospitalSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    logo: {
+      type: String,
+      default: null,
+    },
+
     totalBeds: {
       type: Number,
       required: true,

@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import { routeRoles } from "@/lib/navigation";
 import { ROUTES } from "@/lib/routes";
 import { AuthProvider } from "@/context/AuthContext";
@@ -18,7 +18,9 @@ import { NotificationsPage } from "@/pages/notifications/NotificationsPage";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { UsersPage } from "@/pages/users/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
+import { DoctorDashboardPage } from "@/pages/dashboard/DoctorDashboardPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
+import { HomeRedirect } from "@/routes/HomeRedirect";
 
 export function AppRoutes() {
   return (
@@ -32,10 +34,7 @@ export function AppRoutes() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
-            <Route
-              index
-              element={<Navigate to={ROUTES.DASHBOARD} replace />}
-            />
+            <Route index element={<HomeRedirect />} />
 
             <Route
               element={
@@ -43,6 +42,17 @@ export function AppRoutes() {
               }
             >
               <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+            </Route>
+
+            <Route
+              element={
+                <RoleRoute allowedRoles={routeRoles[ROUTES.DOCTOR_DASHBOARD]} />
+              }
+            >
+              <Route
+                path={ROUTES.DOCTOR_DASHBOARD}
+                element={<DoctorDashboardPage />}
+              />
             </Route>
 
             <Route

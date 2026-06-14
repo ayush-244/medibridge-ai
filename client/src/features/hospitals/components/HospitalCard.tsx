@@ -1,7 +1,8 @@
-import { Building2, MapPin, ArrowRight } from "lucide-react";
+import { MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ResourceCard, ResourceMetric } from "@/components/common/ResourceCard";
 import { HospitalStatusBadge } from "@/components/common/StatusBadge";
+import { HospitalAvatar } from "@/components/common/HospitalAvatar";
 import { getHospitalCapacityStatus } from "@/features/hospitals/utils/hospitalUtils";
 import type { Hospital } from "@/features/hospitals/types/hospital.types";
 
@@ -27,9 +28,7 @@ export function HospitalCard({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Building2 className="h-4 w-4" />
-              </div>
+              <HospitalAvatar hospital={hospital} size="md" />
               <div className="min-w-0">
                 <h3 className="truncate font-semibold text-text-primary">
                   {hospital.name}

@@ -32,8 +32,13 @@ export const navigationConfig: NavItem[] = [
       ROLES.SUPER_ADMIN,
       ROLES.HOSPITAL_ADMIN,
       ROLES.REFERRAL_COORDINATOR,
-      ROLES.DOCTOR,
     ],
+  },
+  {
+    title: "Dashboard",
+    href: ROUTES.DOCTOR_DASHBOARD,
+    icon: LayoutDashboard,
+    roles: [ROLES.DOCTOR],
   },
   {
     title: "Referrals",
@@ -183,8 +188,8 @@ export const routeRoles: Record<string, UserRole[]> = {
     ROLES.SUPER_ADMIN,
     ROLES.HOSPITAL_ADMIN,
     ROLES.REFERRAL_COORDINATOR,
-    ROLES.DOCTOR,
   ],
+  [ROUTES.DOCTOR_DASHBOARD]: [ROLES.DOCTOR],
   [ROUTES.REFERRALS]: [
     ROLES.SUPER_ADMIN,
     ROLES.HOSPITAL_ADMIN,
@@ -226,6 +231,7 @@ export const routeRoles: Record<string, UserRole[]> = {
 
 export const breadcrumbLabels: Record<string, string> = {
   dashboard: "Dashboard",
+  "doctor-dashboard": "Doctor Dashboard",
   referrals: "Referrals",
   inbound: "Inbound",
   outbound: "Outbound",

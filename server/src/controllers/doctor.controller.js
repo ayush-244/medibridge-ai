@@ -2,11 +2,52 @@ const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
+const {
+  isValidEmail,
+  isValidPhone,
+  isValidSpecialization,
+} = require("../utils/validators");
 
 const createDoctor = async (req, res) => {
   try {
     if (req.user.role === "HOSPITAL_ADMIN") {
       req.body.hospital = req.user.hospital;
+    }
+
+    const { email, specialization, phone } = req.body;
+
+    if (!specialization || !isValidSpecialization(specialization)) {
+      return res.status(400).json({
+        success: false,
+        message: "Select a valid specialization",
+      });
+    }
+
+    if (email) {
+      if (!isValidEmail(email)) {
+        return res.status(400).json({
+          success: false,
+          message: "Enter a valid doctor email address",
+        });
+      }
+
+      const existingDoctor = await Doctor.findOne({
+        email: email.trim().toLowerCase(),
+      });
+
+      if (existingDoctor) {
+        return res.status(400).json({
+          success: false,
+          message: "A doctor with this email already exists",
+        });
+      }
+    }
+
+    if (phone && !isValidPhone(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid phone number (7–15 digits)",
+      });
     }
 
     const doctor = await Doctor.create(req.body);
@@ -134,11 +175,55 @@ const updateDoctor = async (req, res) => {
       hospital,
       status,
       profilePhoto,
+      phone,
     } = req.body;
 
     if (name) doctor.name = name;
-    if (email !== undefined) doctor.email = email;
-    if (specialization) doctor.specialization = specialization;
+
+    if (email !== undefined) {
+      if (email) {
+        if (!isValidEmail(email)) {
+          return res.status(400).json({
+            success: false,
+            message: "Enter a valid doctor email address",
+          });
+        }
+
+        const duplicate = await Doctor.findOne({
+          email: email.trim().toLowerCase(),
+          _id: { $ne: doctor._id },
+        });
+
+        if (duplicate) {
+          return res.status(400).json({
+            success: false,
+            message: "A doctor with this email already exists",
+          });
+        }
+      }
+
+      doctor.email = email;
+    }
+
+    if (phone !== undefined) {
+      if (phone && !isValidPhone(phone)) {
+        return res.status(400).json({
+          success: false,
+          message: "Enter a valid phone number (7–15 digits)",
+        });
+      }
+      doctor.phone = phone;
+    }
+
+    if (specialization) {
+      if (!isValidSpecialization(specialization)) {
+        return res.status(400).json({
+          success: false,
+          message: "Select a valid specialization",
+        });
+      }
+      doctor.specialization = specialization;
+    }
     if (experience !== undefined) doctor.experience = experience;
     if (status) doctor.status = status;
     if (profilePhoto !== undefined) doctor.profilePhoto = profilePhoto || null;

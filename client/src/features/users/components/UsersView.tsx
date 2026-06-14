@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePagination } from "@/hooks/usePagination";
+import { useAuth } from "@/hooks/useAuth";
 import { MANAGEABLE_ROLES, ROLES, type UserRole } from "@/lib/constants";
 import { useUsers } from "@/features/users/hooks/useUsers";
 import { useUserDetail } from "@/features/users/hooks/useUserDetail";
@@ -16,9 +17,11 @@ import { CreateUserDialog } from "@/features/users/components/CreateUserDialog";
 import { UserDetailDialog } from "@/features/users/components/UserDetailDialog";
 import { UsersSkeleton } from "@/features/users/components/UsersSkeleton";
 import { filterUsers } from "@/features/users/utils/userUtils";
+import { PendingUsersPanel } from "@/features/admin/components/PendingUsersPanel";
 import type { User } from "@/features/users/types/user.types";
 
 export function UsersView() {
+  const { user } = useAuth();
   const { users, isLoading, error, refetch } = useUsers();
   const { user: selectedUser, isLoading: detailLoading, fetchUser, clearUser } =
     useUserDetail();
@@ -94,6 +97,8 @@ export function UsersView() {
           </Button>
         }
       />
+
+      {user?.role === ROLES.SUPER_ADMIN && <PendingUsersPanel />}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
         <SearchBar

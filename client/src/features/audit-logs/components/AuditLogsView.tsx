@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ClipboardList, RefreshCw } from "lucide-react";
+import { ClipboardList, RefreshCw, Download } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { FilterBar } from "@/components/common/FilterBar";
@@ -10,6 +10,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { usePagination } from "@/hooks/usePagination";
 import { useAuditLogs } from "@/features/audit-logs/hooks/useAuditLogs";
 import { formatActivityDate } from "@/features/audit-logs/utils/auditLogUtils";
+import { exportAuditLogsToCsv } from "@/features/audit-logs/utils/auditLogExport";
 
 const MODULES = [
   "ALL",
@@ -75,9 +76,21 @@ export function AuditLogsView() {
         title="Audit Logs"
         description="System activity and change history across all modules."
         action={
-          <p className="text-sm text-text-secondary">
-            {isLoading ? "Loading..." : `${filtered.length} entries`}
-          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={() => exportAuditLogsToCsv(filtered)}
+              disabled={isLoading || filtered.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <p className="text-sm text-text-secondary">
+              {isLoading ? "Loading..." : `${filtered.length} entries`}
+            </p>
+          </div>
         }
       />
 

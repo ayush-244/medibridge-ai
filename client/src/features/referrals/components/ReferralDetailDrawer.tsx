@@ -1,4 +1,4 @@
-import { Check, Loader2, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -13,6 +13,8 @@ import {
   ReferralStatusBadge,
 } from "@/components/common/StatusBadge";
 import { ReferralDrawerSkeleton } from "@/features/referrals/components/ReferralDrawerSkeleton";
+import { ReferralTimeline } from "@/features/referrals/components/ReferralTimeline";
+import { useReferralReservation } from "@/features/referrals/hooks/useReferralReservation";
 import { getReferralPriority } from "@/features/referrals/utils/severity";
 import {
   canAcceptReferral,
@@ -21,13 +23,12 @@ import {
   formatReferralDate,
   getHospitalCity,
   getHospitalName,
-  getTimelineSteps,
+  getReferralLifecycleSteps,
 } from "@/features/referrals/utils/referralUtils";
 import type {
   Referral,
   ReferralAction,
 } from "@/features/referrals/types/referral.types";
-import { cn } from "@/lib/utils";
 
 interface DetailRowProps {
   label: string;
@@ -58,6 +59,9 @@ export function ReferralDetailDrawer({
   onOpenChange,
   onAction,
 }: ReferralDetailDrawerProps) {
+  const { reservation, isLoading: reservationLoading } =
+    useReferralReservation(referral?._id ?? null, open && !!referral);
+
   if (!referral) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -69,7 +73,10 @@ export function ReferralDetailDrawer({
   }
 
   const priority = getReferralPriority(referral.condition);
-  const timeline = getTimelineSteps(referral.status);
+  const timeline = getReferralLifecycleSteps(
+    referral.status,
+    reservation?.reservationStatus,
+  );
   const requestedBy =
     typeof referral.requestedBy === "string"
       ? referral.requestedBy
@@ -123,48 +130,18 @@ export function ReferralDetailDrawer({
           </div>
 
           <div>
-            <h4 className="mb-2 text-sm font-semibold">Timeline</h4>
-            <div className="space-y-0">
-              {timeline.map((step, index) => (
-                <div key={step.key} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={cn(
-                        "flex h-6 w-6 items-center justify-center rounded-full text-xs",
-                        step.completed
-                          ? step.rejected
-                            ? "bg-danger/10 text-danger"
-                            : "bg-success/10 text-success"
-                          : "bg-gray-100 text-text-secondary",
-                      )}
-                    >
-                      {step.completed ? (
-                        step.rejected ? (
-                          <X className="h-3 w-3" />
-                        ) : (
-                          <Check className="h-3 w-3" />
-                        )
-                      ) : (
-                        index + 1
-                      )}
-                    </div>
-                    {index < timeline.length - 1 && (
-                      <div className="my-1 h-8 w-px bg-border" />
-                    )}
-                  </div>
-                  <div className="pb-4">
-                    <p className="text-sm font-medium text-text-primary">
-                      {step.label}
-                    </p>
-                    {step.completed && (
-                      <p className="text-xs text-text-secondary">
-                        {formatReferralDate(referral.updatedAt)}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h4 className="mb-2 text-sm font-semibold">Lifecycle Timeline</h4>
+            {reservationLoading ? (
+              <div className="flex items-center gap-2 text-sm text-text-secondary">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading reservation details...
+              </div>
+            ) : (
+              <ReferralTimeline
+                steps={timeline}
+                timestamp={formatReferralDate(referral.updatedAt)}
+              />
+            )}
           </div>
 
           <div>

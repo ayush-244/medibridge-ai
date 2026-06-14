@@ -1,5 +1,6 @@
 import type { UserRole, UserStatus } from "@/lib/constants";
 import { isStandardSpecialization } from "@/lib/constants/specializations";
+import { getEmailError } from "@/lib/validation";
 import type { User, UserFilters } from "@/features/users/types/user.types";
 
 export function getUserStatus(user: User): UserStatus {
@@ -55,7 +56,7 @@ export function formatRoleLabel(role: UserRole): string {
 }
 
 export function isValidEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  return getEmailError(email) === null;
 }
 
 export function validateCreateUserForm(values: {
@@ -67,8 +68,8 @@ export function validateCreateUserForm(values: {
   specialization: string;
 }): string | null {
   if (!values.name.trim()) return "Name is required";
-  if (!values.email.trim()) return "Email is required";
-  if (!isValidEmail(values.email)) return "Enter a valid email address";
+  const emailError = getEmailError(values.email, true);
+  if (emailError) return emailError;
   if (!values.password) return "Password is required";
   if (values.password.length < 6) {
     return "Password must be at least 6 characters";

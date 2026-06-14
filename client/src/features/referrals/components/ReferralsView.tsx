@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { FileText, Plus, RefreshCw } from "lucide-react";
+import { FileText, Plus, RefreshCw, Download } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { FilterBar } from "@/components/common/FilterBar";
@@ -28,6 +28,7 @@ import {
   sortReferrals,
   canCreateReferral,
 } from "@/features/referrals/utils/referralUtils";
+import { exportReferralsToCsv } from "@/features/referrals/utils/referralExport";
 import type {
   Referral,
   ReferralAction,
@@ -205,6 +206,16 @@ export function ReferralsView() {
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={() => exportReferralsToCsv(filtered)}
+              disabled={isLoading || filtered.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
             </Button>
             {showCreateReferral && (
               <Button

@@ -2,6 +2,7 @@ export const ROUTES = {
   LOGIN: "/login",
   UNAUTHORIZED: "/unauthorized",
   DASHBOARD: "/dashboard",
+  DOCTOR_DASHBOARD: "/doctor-dashboard",
   REFERRALS: "/referrals",
   REFERRALS_INBOUND: "/referrals/inbound",
   REFERRALS_OUTBOUND: "/referrals/outbound",

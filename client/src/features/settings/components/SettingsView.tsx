@@ -6,6 +6,8 @@ import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 import type { NotificationPreferences } from "@/types/auth";
+import { getPhoneError } from "@/lib/validation";
+import { showErrorToast } from "@/lib/toast";
 
 function ToggleRow({
   label,
@@ -73,6 +75,11 @@ export function SettingsView() {
   }, [profile, initialized]);
 
   const handleProfileSave = async () => {
+    const phoneError = getPhoneError(phone);
+    if (phoneError) {
+      showErrorToast(phoneError);
+      return;
+    }
     await updateProfile({ name: name.trim(), phone: phone.trim() });
   };
 

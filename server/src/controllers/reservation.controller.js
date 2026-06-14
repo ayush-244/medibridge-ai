@@ -1,4 +1,5 @@
 const BedReservation = require("../models/BedReservation");
+const Doctor = require("../models/Doctor");
 const {
   patientArrived,
   extendReservation,
@@ -21,6 +22,17 @@ const getReservations = async (req, res) => {
       query = {
         hospital: req.user.hospital,
       };
+    } else if (req.user.role === "DOCTOR") {
+      const doctor = await Doctor.findOne({ user: req.user.id });
+
+      if (!doctor) {
+        return res.status(404).json({
+          success: false,
+          message: "Doctor profile not found",
+        });
+      }
+
+      query = { doctor: doctor._id };
     }
 
     const reservations = await populateReservation(
@@ -63,6 +75,20 @@ const getReservationById = async (req, res) => {
         success: false,
         message: "Access denied",
       });
+    }
+
+    if (req.user.role === "DOCTOR") {
+      const doctor = await Doctor.findOne({ user: req.user.id });
+
+      if (
+        !doctor ||
+        reservation.doctor._id.toString() !== doctor._id.toString()
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
+        });
+      }
     }
 
     res.status(200).json({

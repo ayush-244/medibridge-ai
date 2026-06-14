@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarClock, RefreshCw } from "lucide-react";
+import { CalendarClock, RefreshCw, Download } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { FilterBar } from "@/components/common/FilterBar";
@@ -26,6 +26,7 @@ import {
   getUniqueHospitals,
   sortByExpiry,
 } from "@/features/reservations/utils/reservationUtils";
+import { exportReservationsToCsv } from "@/features/reservations/utils/reservationExport";
 import type { Reservation } from "@/features/reservations/types/reservation.types";
 
 export function ReservationsView() {
@@ -132,16 +133,28 @@ export function ReservationsView() {
         title="Reservations"
         description="Manage active and historical bed reservations"
         action={
-          <Button
-            variant="secondary"
-            size="sm"
-            className="gap-2"
-            onClick={() => void refetch()}
-            disabled={isLoading}
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={() => exportReservationsToCsv(filtered)}
+              disabled={isLoading || filtered.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={() => void refetch()}
+              disabled={isLoading}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         }
       />
 

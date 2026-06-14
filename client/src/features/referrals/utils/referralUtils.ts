@@ -1,4 +1,5 @@
 import { ROLES, type ReferralStatus, type UserRole } from "@/lib/constants";
+import type { ReservationStatus } from "@/lib/constants";
 import { isStandardSpecialization } from "@/lib/constants/specializations";
 import type { TimelineStep } from "@/features/referrals/types/referral.types";
 import type {
@@ -164,28 +165,98 @@ export function paginateReferrals<T>(
 }
 
 export function getTimelineSteps(status: ReferralStatus): TimelineStep[] {
-  const steps: TimelineStep[] = [
-    { label: "Created", key: "PENDING", completed: true },
-    { label: "Accepted", key: "ACCEPTED", completed: false },
-    { label: "Completed", key: "COMPLETED", completed: false },
-  ];
+  return getReferralLifecycleSteps(status);
+}
+
+export function getReferralLifecycleSteps(
+  status: ReferralStatus,
+  reservationStatus?: ReservationStatus | null,
+): TimelineStep[] {
+  const created: TimelineStep = {
+    label: "Created",
+    key: "CREATED",
+    completed: true,
+  };
 
   if (status === "REJECTED") {
     return [
-      { label: "Created", key: "PENDING", completed: true },
-      { label: "Rejected", key: "REJECTED", completed: true, rejected: true },
+      created,
+      {
+        label: "Rejected",
+        key: "REJECTED",
+        completed: true,
+        rejected: true,
+      },
     ];
   }
 
-  if (status === "ACCEPTED" || status === "COMPLETED") {
-    steps[1].completed = true;
+  if (
+    reservationStatus === "CANCELLED" &&
+    status !== "COMPLETED"
+  ) {
+    return [
+      created,
+      {
+        label: "Cancelled",
+        key: "CANCELLED",
+        completed: true,
+        rejected: true,
+      },
+    ];
   }
 
-  if (status === "COMPLETED") {
-    steps[2].completed = true;
-  }
+  const accepted: TimelineStep = {
+    label: "Accepted",
+    key: "ACCEPTED",
+    completed: status === "ACCEPTED" || status === "COMPLETED",
+  };
 
-  return steps;
+  const hasReservation =
+    reservationStatus &&
+    !["CANCELLED", "EXPIRED"].includes(reservationStatus);
+
+  const bedReserved: TimelineStep = {
+    label: "Bed Reserved",
+    key: "BED_RESERVED",
+    completed:
+      hasReservation ||
+      status === "ACCEPTED" ||
+      status === "COMPLETED",
+  };
+
+  const doctorAssigned: TimelineStep = {
+    label: "Doctor Assigned",
+    key: "DOCTOR_ASSIGNED",
+    completed:
+      hasReservation ||
+      status === "ACCEPTED" ||
+      status === "COMPLETED",
+  };
+
+  const patientArrived: TimelineStep = {
+    label: "Patient Arrived",
+    key: "PATIENT_ARRIVED",
+    completed:
+      reservationStatus === "ARRIVED" ||
+      reservationStatus === "COMPLETED" ||
+      status === "COMPLETED",
+  };
+
+  const completed: TimelineStep = {
+    label: "Completed",
+    key: "COMPLETED",
+    completed:
+      status === "COMPLETED" || reservationStatus === "COMPLETED",
+  };
+
+  return [
+    created,
+    accepted,
+    bedReserved,
+    doctorAssigned,
+    patientArrived,
+    completed,
+  ];
 }
 
 export function canAcceptReferral(status: ReferralStatus): boolean {

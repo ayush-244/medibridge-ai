@@ -5,6 +5,11 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
+const {
+  isValidEmail,
+  isValidPhone,
+  isValidSpecialization,
+} = require("../utils/validators");
 
 const registerUser = async (req, res) => {
   try {
@@ -32,6 +37,13 @@ const registerUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Missing required fields: name, email, password",
+      });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid email address",
       });
     }
 
@@ -84,6 +96,13 @@ const registerUser = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Specialization is required for doctors",
+      });
+    }
+
+    if (role === "DOCTOR" && !isValidSpecialization(specialization)) {
+      return res.status(400).json({
+        success: false,
+        message: "Select a valid specialization",
       });
     }
 

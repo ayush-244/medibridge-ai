@@ -8,6 +8,7 @@ import {
   SPECIALIZATIONS,
   isStandardSpecialization,
 } from "@/lib/constants/specializations";
+import { getEmailError } from "@/lib/validation";
 
 export function getDoctorUtilization(doctor: Doctor): number {
   if (doctor.maxPatients === 0) return 0;
@@ -104,9 +105,8 @@ export function validateDoctorForm(
     return "Select a valid specialization";
   }
   if (!values.hospital) return "Hospital is required";
-  if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
-    return "Enter a valid email address";
-  }
+  const emailError = getEmailError(values.email);
+  if (emailError) return emailError;
   return null;
 }
 

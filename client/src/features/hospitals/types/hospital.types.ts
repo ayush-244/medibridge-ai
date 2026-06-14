@@ -17,6 +17,7 @@ export interface Hospital {
   availableICUBeds: number;
   location?: HospitalLocation;
   doctors: string[];
+  logo?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -28,6 +29,7 @@ export interface CreateHospitalPayload {
   state: string;
   contactNumber?: string;
   email?: string;
+  logo?: string | null;
   totalBeds: number;
   availableBeds: number;
   totalICUBeds: number;
@@ -48,6 +50,7 @@ export interface HospitalFormValues {
   state: string;
   contactNumber: string;
   email: string;
+  logo: string | null;
   totalBeds: string;
   availableBeds: string;
   totalICUBeds: string;
