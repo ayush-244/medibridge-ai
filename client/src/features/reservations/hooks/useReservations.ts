@@ -54,6 +54,9 @@ export function useReservations(): UseReservationsReturn {
 
   useSocketEvent(SOCKET_EVENTS.BED_RESERVED, debouncedRefetch);
   useSocketEvent(SOCKET_EVENTS.RESERVATION_EXPIRED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.RESERVATION_EXTENDED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.RESERVATION_CANCELLED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.PATIENT_ARRIVED, debouncedRefetch);
 
   useEffect(() => {
     fetchReservations();

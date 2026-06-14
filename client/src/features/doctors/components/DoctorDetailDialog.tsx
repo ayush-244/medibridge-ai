@@ -5,6 +5,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { DoctorStatusBadge } from "@/components/common/StatusBadge";
 import {
   getDoctorHospitalCity,
@@ -57,12 +58,16 @@ interface DoctorDetailDialogProps {
   doctor: Doctor | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: () => void;
+  onToggleAvailability?: () => void;
 }
 
 export function DoctorDetailDialog({
   doctor,
   open,
   onOpenChange,
+  onEdit,
+  onToggleAvailability,
 }: DoctorDetailDialogProps) {
   if (!doctor) return null;
 
@@ -93,6 +98,15 @@ export function DoctorDetailDialog({
         <div className="space-y-6">
           <DetailSection title="Doctor Information">
             <DetailRow label="Specialization" value={doctor.specialization} />
+            {doctor.email && (
+              <DetailRow label="Email" value={doctor.email} />
+            )}
+            {doctor.experience != null && (
+              <DetailRow
+                label="Experience"
+                value={`${doctor.experience} years`}
+              />
+            )}
             <DetailRow
               label="Phone"
               value={doctor.phone || "Not provided"}
@@ -130,6 +144,27 @@ export function DoctorDetailDialog({
             />
           </DetailSection>
         </div>
+
+        {(onEdit || onToggleAvailability) && (
+          <div className="flex gap-2 pt-2">
+            {onEdit && (
+              <Button className="flex-1" onClick={onEdit}>
+                Edit Doctor
+              </Button>
+            )}
+            {onToggleAvailability && (
+              <Button
+                variant="secondary"
+                className="flex-1"
+                onClick={onToggleAvailability}
+              >
+                {doctor.status === "AVAILABLE"
+                  ? "Set Off Duty"
+                  : "Set Available"}
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

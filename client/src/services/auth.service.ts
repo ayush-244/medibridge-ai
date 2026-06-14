@@ -1,6 +1,12 @@
 import api from "@/services/api";
 import type { ApiResponse } from "@/types/api";
-import type { AuthUser, LoginCredentials } from "@/types/auth";
+import type {
+  AuthUser,
+  ChangePasswordPayload,
+  LoginCredentials,
+  NotificationPreferences,
+  UpdateProfilePayload,
+} from "@/types/auth";
 
 interface LoginResponse {
   token: string;
@@ -34,5 +40,43 @@ export const authService = {
     }
 
     return data.user;
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<AuthUser> {
+    const { data } = await api.patch<ApiResponse<AuthUser>>(
+      "/auth/profile",
+      payload,
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to update profile");
+    }
+
+    return data.data;
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+    const { data } = await api.patch<ApiResponse>("/auth/password", payload);
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to change password");
+    }
+  },
+
+  async updateNotificationPreferences(
+    preferences: Partial<NotificationPreferences>,
+  ): Promise<NotificationPreferences> {
+    const { data } = await api.patch<ApiResponse<NotificationPreferences>>(
+      "/auth/notification-preferences",
+      preferences,
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(
+        data.message || "Failed to update notification preferences",
+      );
+    }
+
+    return data.data;
   },
 };

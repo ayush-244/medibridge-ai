@@ -4,6 +4,7 @@ const {
   createDoctor,
   getDoctors,
   getDoctorsByHospital,
+  updateDoctor,
 } = require("../controllers/doctor.controller");
 
 const authenticateUser = require(
@@ -44,6 +45,16 @@ router.get(
     "HOSPITAL_ADMIN"
   ),
   getDoctorsByHospital
+);
+
+router.patch(
+  "/:id",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN"
+  ),
+  updateDoctor
 );
 
 module.exports = router;

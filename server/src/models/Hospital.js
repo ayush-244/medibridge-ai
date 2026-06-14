@@ -23,6 +23,17 @@ const hospitalSchema = new mongoose.Schema(
       required: true,
     },
 
+    contactNumber: {
+      type: String,
+      trim: true,
+    },
+
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+
     totalBeds: {
       type: Number,
       required: true,

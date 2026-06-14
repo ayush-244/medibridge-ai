@@ -3,6 +3,10 @@ const express = require("express");
 const {
   registerUser,
   loginUser,
+  getProfile,
+  updateProfile,
+  changePassword,
+  updateNotificationPreferences,
 } = require("../controllers/auth.controller");
 
 const authenticateUser = require("../middleware/auth.middleware");
@@ -10,23 +14,18 @@ const authorizeRoles = require("../middleware/authorize.middleware");
 
 const router = express.Router();
 
-// Public Routes
-router.post("/register", registerUser);
+router.post("/register", authenticateUser, registerUser);
 router.post("/login", loginUser);
 
-// Protected Route
-router.get(
-  "/profile",
+router.get("/profile", authenticateUser, getProfile);
+router.patch("/profile", authenticateUser, updateProfile);
+router.patch("/password", authenticateUser, changePassword);
+router.patch(
+  "/notification-preferences",
   authenticateUser,
-  (req, res) => {
-    res.json({
-      success: true,
-      user: req.user,
-    });
-  }
+  updateNotificationPreferences,
 );
 
-// Admin Only Route
 router.get(
   "/admin",
   authenticateUser,
@@ -36,10 +35,9 @@ router.get(
       success: true,
       message: "Welcome Super Admin",
     });
-  }
+  },
 );
 
-// Test Route
 router.get("/test", (req, res) => {
   res.json({
     success: true,

@@ -53,6 +53,35 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    phone: {
+      type: String,
+      trim: true,
+    },
+
+    notificationPreferences: {
+      referralAccepted: {
+        type: Boolean,
+        default: true,
+      },
+      doctorAssigned: {
+        type: Boolean,
+        default: true,
+      },
+      bedReserved: {
+        type: Boolean,
+        default: true,
+      },
+      reservationExpired: {
+        type: Boolean,
+        default: true,
+      },
+    },
+
     documents: {
       licenseNumber: {
         type: String,

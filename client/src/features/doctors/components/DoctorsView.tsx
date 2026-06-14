@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { RefreshCw, Stethoscope } from "lucide-react";
+import { Plus, RefreshCw, Stethoscope } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SearchBar } from "@/components/common/SearchBar";
 import { FilterBar } from "@/components/common/FilterBar";
@@ -8,8 +8,11 @@ import { Button } from "@/components/ui/button";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DOCTOR_STATUSES } from "@/lib/constants";
 import { useDoctors } from "@/features/doctors/hooks/useDoctors";
+import { useDoctorMutations } from "@/features/doctors/hooks/useDoctorMutations";
 import { DoctorCard } from "@/features/doctors/components/DoctorCard";
 import { DoctorDetailDialog } from "@/features/doctors/components/DoctorDetailDialog";
+import { CreateDoctorDialog } from "@/features/doctors/components/CreateDoctorDialog";
+import { EditDoctorDialog } from "@/features/doctors/components/EditDoctorDialog";
 import { DoctorsSkeleton } from "@/features/doctors/components/DoctorsSkeleton";
 import {
   filterDoctors,
@@ -20,12 +23,16 @@ import type { DoctorStatus } from "@/lib/constants";
 
 export function DoctorsView() {
   const { doctors, isLoading, error, refetch } = useDoctors();
+  const { toggleAvailability } = useDoctorMutations();
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<DoctorStatus | "ALL">("ALL");
   const [specializationFilter, setSpecializationFilter] = useState("ALL");
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editDoctor, setEditDoctor] = useState<Doctor | null>(null);
 
   const debouncedSearch = useDebounce(search);
 
@@ -49,6 +56,21 @@ export function DoctorsView() {
     setDialogOpen(true);
   };
 
+  const handleEdit = (doctor: Doctor) => {
+    setEditDoctor(doctor);
+    setEditOpen(true);
+  };
+
+  const handleToggleAvailability = async (doctor: Doctor) => {
+    const updated = await toggleAvailability(doctor);
+    if (updated) {
+      await refetch({ silent: true });
+      if (selectedDoctor?._id === doctor._id) {
+        setSelectedDoctor(updated);
+      }
+    }
+  };
+
   if (error && !isLoading) {
     return (
       <div className="page-container space-y-6">
@@ -61,7 +83,7 @@ export function DoctorsView() {
           description={error}
           icon={<Stethoscope className="h-6 w-6" />}
           action={
-            <Button onClick={refetch} className="gap-2">
+            <Button onClick={() => refetch()} className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Retry
             </Button>
@@ -77,9 +99,10 @@ export function DoctorsView() {
         title="Doctor Directory"
         description="View physician availability, specialization, and patient load."
         action={
-          <p className="text-sm text-text-secondary">
-            {isLoading ? "Loading..." : `${filtered.length} doctors`}
-          </p>
+          <Button className="gap-2" onClick={() => setCreateOpen(true)}>
+            <Plus className="h-4 w-4" />
+            Create Doctor
+          </Button>
         }
       />
 
@@ -125,8 +148,14 @@ export function DoctorsView() {
       ) : doctors.length === 0 ? (
         <EmptyState
           title="No doctors found"
-          description="No doctors have been registered in the system yet."
+          description="Create your first doctor to get started."
           icon={<Stethoscope className="h-6 w-6" />}
+          action={
+            <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Create Doctor
+            </Button>
+          }
         />
       ) : filtered.length === 0 ? (
         <EmptyState
@@ -153,6 +182,8 @@ export function DoctorsView() {
               key={doctor._id}
               doctor={doctor}
               onViewDetails={handleViewDetails}
+              onEdit={handleEdit}
+              onToggleAvailability={handleToggleAvailability}
             />
           ))}
         </div>
@@ -162,6 +193,27 @@ export function DoctorsView() {
         doctor={selectedDoctor}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onEdit={
+          selectedDoctor ? () => handleEdit(selectedDoctor) : undefined
+        }
+        onToggleAvailability={
+          selectedDoctor
+            ? () => handleToggleAvailability(selectedDoctor)
+            : undefined
+        }
+      />
+
+      <CreateDoctorDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={() => refetch({ silent: true })}
+      />
+
+      <EditDoctorDialog
+        doctor={editDoctor}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSuccess={() => refetch({ silent: true })}
       />
     </div>
   );

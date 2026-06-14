@@ -37,6 +37,7 @@ const bedReservationSchema = new mongoose.Schema(
       enum: [
         "PENDING",
         "CONFIRMED",
+        "ARRIVED",
         "EXPIRED",
         "CANCELLED",
         "COMPLETED",

@@ -5,6 +5,7 @@ const {
   getAllHospitals,
   getHospitalById,
   updateBeds,
+  updateHospital,
 } = require("../controllers/hospital.controller");
 
 const authenticateUser = require("../middleware/auth.middleware");
@@ -16,7 +17,7 @@ const router = express.Router();
 router.post(
   "/",
   authenticateUser,
-  authorizeRoles("SUPER_ADMIN", "HOSPITAL_ADMIN"),
+  authorizeRoles("SUPER_ADMIN"),
   createHospital
 );
 
@@ -34,14 +35,19 @@ router.get(
   getHospitalById
 );
 
+// Update Hospital
+router.patch(
+  "/:id",
+  authenticateUser,
+  authorizeRoles("SUPER_ADMIN"),
+  updateHospital
+);
+
 // Update Bed Availability
 router.patch(
   "/:id/beds",
   authenticateUser,
-  authorizeRoles(
-    "SUPER_ADMIN",
-    "HOSPITAL_ADMIN"
-  ),
+  authorizeRoles("SUPER_ADMIN"),
   updateBeds
 );
 

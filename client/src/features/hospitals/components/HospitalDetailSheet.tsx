@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -60,6 +61,8 @@ interface HospitalDetailSheetProps {
   isLoading: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit?: () => void;
+  onUpdateBeds?: () => void;
 }
 
 export function HospitalDetailSheet({
@@ -67,6 +70,8 @@ export function HospitalDetailSheet({
   isLoading,
   open,
   onOpenChange,
+  onEdit,
+  onUpdateBeds,
 }: HospitalDetailSheetProps) {
   const status = hospital ? getHospitalCapacityStatus(hospital) : null;
 
@@ -98,6 +103,12 @@ export function HospitalDetailSheet({
                   label="Location"
                   value={`${hospital.city}, ${hospital.state}`}
                 />
+                {hospital.contactNumber && (
+                  <DetailRow label="Contact" value={hospital.contactNumber} />
+                )}
+                {hospital.email && (
+                  <DetailRow label="Email" value={hospital.email} />
+                )}
                 <DetailRow
                   label="Coordinates"
                   value={
@@ -157,6 +168,25 @@ export function HospitalDetailSheet({
                 />
               </DetailSection>
             </SheetBody>
+
+            {(onEdit || onUpdateBeds) && (
+              <div className="border-t border-border p-6 flex gap-2">
+                {onEdit && (
+                  <Button className="flex-1" onClick={onEdit}>
+                    Edit Hospital
+                  </Button>
+                )}
+                {onUpdateBeds && (
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={onUpdateBeds}
+                  >
+                    Update Beds
+                  </Button>
+                )}
+              </div>
+            )}
           </>
         ) : null}
       </SheetContent>

@@ -12,9 +12,16 @@ import type { Doctor } from "@/features/doctors/types/doctor.types";
 interface DoctorCardProps {
   doctor: Doctor;
   onViewDetails: (doctor: Doctor) => void;
+  onEdit?: (doctor: Doctor) => void;
+  onToggleAvailability?: (doctor: Doctor) => void;
 }
 
-export function DoctorCard({ doctor, onViewDetails }: DoctorCardProps) {
+export function DoctorCard({
+  doctor,
+  onViewDetails,
+  onEdit,
+  onToggleAvailability,
+}: DoctorCardProps) {
   const utilization = getDoctorUtilization(doctor);
   const hospitalName = getDoctorHospitalName(doctor);
   const hospitalCity = getDoctorHospitalCity(doctor);
@@ -65,14 +72,30 @@ export function DoctorCard({ doctor, onViewDetails }: DoctorCardProps) {
           />
         </div>
 
-        <Button
-          variant="secondary"
-          className="w-full gap-2"
-          onClick={() => onViewDetails(doctor)}
-        >
-          View Details
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            className="flex-1 gap-2"
+            onClick={() => onViewDetails(doctor)}
+          >
+            View Details
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          {onToggleAvailability && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleAvailability(doctor)}
+            >
+              {doctor.status === "AVAILABLE" ? "Off Duty" : "Available"}
+            </Button>
+          )}
+          {onEdit && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(doctor)}>
+              Edit
+            </Button>
+          )}
+        </div>
       </div>
     </ResourceCard>
   );

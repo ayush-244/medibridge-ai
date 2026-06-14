@@ -97,6 +97,13 @@ export function ReservationsView() {
     if (!open) clearReservation();
   };
 
+  const handleActionComplete = async () => {
+    await refetch({ silent: true });
+    if (selectedReservation) {
+      await fetchReservation(selectedReservation._id);
+    }
+  };
+
   if (error && !isLoading) {
     return (
       <div className="page-container space-y-6">
@@ -260,6 +267,7 @@ export function ReservationsView() {
         now={now}
         open={drawerOpen}
         onOpenChange={handleDrawerChange}
+        onActionComplete={() => void handleActionComplete()}
       />
     </div>
   );

@@ -114,7 +114,8 @@ const reservationStatusConfig: Record<
   ReservationStatus,
   { label: string; variant: "success" | "warning" | "danger" | "default" | "secondary" }
 > = {
-  CONFIRMED: { label: "Confirmed", variant: "success" },
+  CONFIRMED: { label: "Active", variant: "success" },
+  ARRIVED: { label: "Arrived", variant: "default" },
   PENDING: { label: "Pending", variant: "warning" },
   EXPIRED: { label: "Expired", variant: "danger" },
   CANCELLED: { label: "Cancelled", variant: "secondary" },

@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { doctorService } from "@/features/doctors/services/doctor.service";
 import type { Doctor } from "@/features/doctors/types/doctor.types";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { showErrorToast } from "@/lib/toast";
+import { SOCKET_EVENTS } from "@/types/socket";
+
+interface FetchOptions {
+  silent?: boolean;
+}
 
 interface UseDoctorsReturn {
   doctors: Doctor[];
   isLoading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  refetch: (options?: FetchOptions) => Promise<void>;
 }
 
 export function useDoctors(): UseDoctorsReturn {
@@ -15,8 +22,10 @@ export function useDoctors(): UseDoctorsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDoctors = useCallback(async () => {
-    setIsLoading(true);
+  const fetchDoctors = useCallback(async (options?: FetchOptions) => {
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -25,13 +34,25 @@ export function useDoctors(): UseDoctorsReturn {
     } catch (err) {
       const message =
         (err as { message?: string })?.message || "Failed to load doctors";
-      setError(message);
-      setDoctors([]);
-      showErrorToast(message);
+      if (!options?.silent) {
+        setError(message);
+        setDoctors([]);
+        showErrorToast(message);
+      }
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
+
+  const debouncedRefetch = useDebouncedCallback(
+    () => fetchDoctors({ silent: true }),
+    500,
+  );
+
+  useSocketEvent(SOCKET_EVENTS.DOCTOR_CREATED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.DOCTOR_UPDATED, debouncedRefetch);
 
   useEffect(() => {
     fetchDoctors();

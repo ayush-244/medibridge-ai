@@ -63,6 +63,9 @@ export function useActivities(enabled = true): UseActivitiesReturn {
   useSocketEvent(SOCKET_EVENTS.RESERVATION_EXPIRED, debouncedRefetch, enabled);
   useSocketEvent(SOCKET_EVENTS.DOCTOR_ASSIGNED, debouncedRefetch, enabled);
   useSocketEvent(SOCKET_EVENTS.DASHBOARD_UPDATED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.USER_CREATED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.HOSPITAL_UPDATED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.PATIENT_ARRIVED, debouncedRefetch, enabled);
 
   useEffect(() => {
     fetchActivities();

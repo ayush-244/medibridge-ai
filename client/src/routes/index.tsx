@@ -16,6 +16,8 @@ import { ReservationsPage } from "@/pages/reservations/ReservationsPage";
 import { ReportsPage } from "@/pages/reports/ReportsPage";
 import { NotificationsPage } from "@/pages/notifications/NotificationsPage";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
+import { UsersPage } from "@/pages/users/UsersPage";
+import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 export function AppRoutes() {
@@ -107,6 +109,25 @@ export function AppRoutes() {
               }
             >
               <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+            </Route>
+
+            <Route
+              element={
+                <RoleRoute allowedRoles={routeRoles[ROUTES.USERS]} />
+              }
+            >
+              <Route path={ROUTES.USERS} element={<UsersPage />} />
+            </Route>
+
+            <Route
+              element={
+                <RoleRoute allowedRoles={routeRoles[ROUTES.AUDIT_LOGS]} />
+              }
+            >
+              <Route
+                path={ROUTES.AUDIT_LOGS}
+                element={<AuditLogsPage />}
+              />
             </Route>
           </Route>
         </Route>

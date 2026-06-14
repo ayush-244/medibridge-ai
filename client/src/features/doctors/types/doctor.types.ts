@@ -9,7 +9,9 @@ export interface DoctorHospital {
 export interface Doctor {
   _id: string;
   name: string;
+  email?: string;
   specialization: string;
+  experience?: number;
   hospital: DoctorHospital | string;
   status: DoctorStatus;
   phone?: string;
@@ -17,6 +19,33 @@ export interface Doctor {
   maxPatients: number;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface CreateDoctorPayload {
+  name: string;
+  email?: string;
+  specialization: string;
+  experience?: number;
+  hospital: string;
+  status?: DoctorStatus;
+}
+
+export interface UpdateDoctorPayload {
+  name?: string;
+  email?: string;
+  specialization?: string;
+  experience?: number;
+  hospital?: string;
+  status?: DoctorStatus;
+}
+
+export interface DoctorFormValues {
+  name: string;
+  email: string;
+  specialization: string;
+  experience: string;
+  hospital: string;
+  status: DoctorStatus;
 }
 
 export interface DoctorFilters {

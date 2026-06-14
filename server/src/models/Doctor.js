@@ -14,6 +14,18 @@ const doctorSchema = new mongoose.Schema(
       trim: true,
     },
 
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
+
+    experience: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+
     hospital: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Hospital",

@@ -21,6 +21,7 @@ const smartReferralRoutes = require(
 const adminRoutes = require(
   "./routes/admin.routes"
 );
+const userRoutes = require("./routes/user.routes");
 
 const doctorDashboardRoutes = require(
   "./routes/doctorDashboard.routes"
@@ -66,6 +67,7 @@ app.use(
   smartReferralRoutes
 );
 app.use("/api/admin", adminRoutes);
+app.use("/api/users", userRoutes);
 app.use(
   "/api/reports",
   reportRoutes

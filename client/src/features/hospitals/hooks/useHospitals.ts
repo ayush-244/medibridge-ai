@@ -1,13 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { hospitalService } from "@/features/hospitals/services/hospital.service";
 import type { Hospital } from "@/features/hospitals/types/hospital.types";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { showErrorToast } from "@/lib/toast";
+import { SOCKET_EVENTS } from "@/types/socket";
+
+interface FetchOptions {
+  silent?: boolean;
+}
 
 interface UseHospitalsReturn {
   hospitals: Hospital[];
   isLoading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  refetch: (options?: FetchOptions) => Promise<void>;
 }
 
 export function useHospitals(): UseHospitalsReturn {
@@ -15,8 +22,10 @@ export function useHospitals(): UseHospitalsReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHospitals = useCallback(async () => {
-    setIsLoading(true);
+  const fetchHospitals = useCallback(async (options?: FetchOptions) => {
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -25,13 +34,24 @@ export function useHospitals(): UseHospitalsReturn {
     } catch (err) {
       const message =
         (err as { message?: string })?.message || "Failed to load hospitals";
-      setError(message);
-      setHospitals([]);
-      showErrorToast(message);
+      if (!options?.silent) {
+        setError(message);
+        setHospitals([]);
+        showErrorToast(message);
+      }
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
+
+  const debouncedRefetch = useDebouncedCallback(
+    () => fetchHospitals({ silent: true }),
+    500,
+  );
+
+  useSocketEvent(SOCKET_EVENTS.HOSPITAL_UPDATED, debouncedRefetch);
 
   useEffect(() => {
     fetchHospitals();

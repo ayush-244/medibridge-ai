@@ -50,7 +50,7 @@ export function getExpiryCountdown(
     return { label: "Expired", isExpired: true, isUrgent: false };
   }
 
-  if (status !== "CONFIRMED" && status !== "PENDING") {
+  if (status !== "CONFIRMED" && status !== "PENDING" && status !== "ARRIVED") {
     return { label: formatReservationDate(expiresAt), isExpired: false, isUrgent: false };
   }
 
@@ -81,7 +81,9 @@ export function getExpiryCountdown(
 
 export function computeSummary(reservations: Reservation[]): ReservationSummary {
   return {
-    active: reservations.filter((r) => r.reservationStatus === "CONFIRMED").length,
+    active: reservations.filter((r) =>
+      ["CONFIRMED", "ARRIVED"].includes(r.reservationStatus),
+    ).length,
     expired: reservations.filter((r) => r.reservationStatus === "EXPIRED").length,
     icu: reservations.filter((r) => r.bedType === "ICU").length,
     general: reservations.filter((r) => r.bedType === "GENERAL").length,

@@ -4,10 +4,12 @@ import {
   Bell,
   Building2,
   CalendarClock,
+  ClipboardList,
   FileText,
   LayoutDashboard,
   Settings,
   Stethoscope,
+  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROLES, type UserRole } from "@/lib/constants";
@@ -119,6 +121,25 @@ export const navigationConfig: NavItem[] = [
         icon: Activity,
         roles: [ROLES.SUPER_ADMIN],
       },
+      {
+        title: "Audit Logs",
+        href: ROUTES.AUDIT_LOGS,
+        icon: ClipboardList,
+        roles: [ROLES.SUPER_ADMIN],
+      },
+    ],
+  },
+  {
+    title: "Administration",
+    icon: Users,
+    roles: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
+    children: [
+      {
+        title: "Users",
+        href: ROUTES.USERS,
+        icon: Users,
+        roles: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
+      },
     ],
   },
   {
@@ -199,6 +220,8 @@ export const routeRoles: Record<string, UserRole[]> = {
     ROLES.REFERRAL_COORDINATOR,
     ROLES.DOCTOR,
   ],
+  [ROUTES.USERS]: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
+  [ROUTES.AUDIT_LOGS]: [ROLES.SUPER_ADMIN],
 };
 
 export const breadcrumbLabels: Record<string, string> = {
@@ -212,4 +235,7 @@ export const breadcrumbLabels: Record<string, string> = {
   reports: "Reports",
   notifications: "Notifications",
   settings: "Settings",
+  users: "Users",
+  admin: "Admin",
+  "audit-logs": "Audit Logs",
 };

@@ -38,6 +38,7 @@ export type HospitalCapacityStatus =
 export const RESERVATION_STATUSES = [
   "PENDING",
   "CONFIRMED",
+  "ARRIVED",
   "EXPIRED",
   "CANCELLED",
   "COMPLETED",
@@ -53,6 +54,22 @@ export const AUTH_STORAGE_KEY = "medibridge_auth";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+export const MANAGEABLE_ROLES = [
+  "HOSPITAL_ADMIN",
+  "REFERRAL_COORDINATOR",
+  "DOCTOR",
+] as const;
+
+export type ManageableRole = (typeof MANAGEABLE_ROLES)[number];
+
+export const USER_STATUSES = ["ACTIVE", "PENDING", "DEACTIVATED"] as const;
+
+export type UserStatus = (typeof USER_STATUSES)[number];
+
+export const RESERVATION_DURATIONS = [1, 2, 4, 6, 12, 24] as const;
+
+export type ReservationDuration = (typeof RESERVATION_DURATIONS)[number];
 
 export const SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";

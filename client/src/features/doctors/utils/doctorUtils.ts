@@ -1,4 +1,9 @@
-import type { Doctor, DoctorFilters } from "@/features/doctors/types/doctor.types";
+import type {
+  CreateDoctorPayload,
+  Doctor,
+  DoctorFilters,
+  DoctorFormValues,
+} from "@/features/doctors/types/doctor.types";
 
 export function getDoctorUtilization(doctor: Doctor): number {
   if (doctor.maxPatients === 0) return 0;
@@ -48,4 +53,52 @@ export function filterDoctors(
       hospitalName.includes(query)
     );
   });
+}
+
+export function toDoctorFormValues(doctor?: Doctor): DoctorFormValues {
+  if (!doctor) {
+    return {
+      name: "",
+      email: "",
+      specialization: "",
+      experience: "",
+      hospital: "",
+      status: "AVAILABLE",
+    };
+  }
+
+  return {
+    name: doctor.name,
+    email: doctor.email || "",
+    specialization: doctor.specialization,
+    experience: doctor.experience != null ? String(doctor.experience) : "",
+    hospital:
+      typeof doctor.hospital === "string"
+        ? doctor.hospital
+        : doctor.hospital._id,
+    status: doctor.status,
+  };
+}
+
+export function validateDoctorForm(values: DoctorFormValues): string | null {
+  if (!values.name.trim()) return "Name is required";
+  if (!values.specialization.trim()) return "Specialization is required";
+  if (!values.hospital) return "Hospital is required";
+  if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
+    return "Enter a valid email address";
+  }
+  return null;
+}
+
+export function toCreateDoctorPayload(
+  values: DoctorFormValues,
+): CreateDoctorPayload {
+  return {
+    name: values.name.trim(),
+    email: values.email.trim() || undefined,
+    specialization: values.specialization.trim(),
+    experience: values.experience ? Number(values.experience) : undefined,
+    hospital: values.hospital,
+    status: values.status,
+  };
 }

@@ -8,9 +8,16 @@ import type { Hospital } from "@/features/hospitals/types/hospital.types";
 interface HospitalCardProps {
   hospital: Hospital;
   onViewDetails: (hospital: Hospital) => void;
+  onEdit?: (hospital: Hospital) => void;
+  onUpdateBeds?: (hospital: Hospital) => void;
 }
 
-export function HospitalCard({ hospital, onViewDetails }: HospitalCardProps) {
+export function HospitalCard({
+  hospital,
+  onViewDetails,
+  onEdit,
+  onUpdateBeds,
+}: HospitalCardProps) {
   const status = getHospitalCapacityStatus(hospital);
   const doctorCount = hospital.doctors?.length ?? 0;
 
@@ -51,14 +58,30 @@ export function HospitalCard({ hospital, onViewDetails }: HospitalCardProps) {
           <ResourceMetric label="Doctors" value={doctorCount} />
         </div>
 
-        <Button
-          variant="secondary"
-          className="w-full gap-2 group-hover:border-primary/30"
-          onClick={() => onViewDetails(hospital)}
-        >
-          View Details
-          <ArrowRight className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="secondary"
+            className="flex-1 gap-2"
+            onClick={() => onViewDetails(hospital)}
+          >
+            View Details
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          {onEdit && (
+            <Button variant="ghost" size="sm" onClick={() => onEdit(hospital)}>
+              Edit
+            </Button>
+          )}
+          {onUpdateBeds && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onUpdateBeds(hospital)}
+            >
+              Beds
+            </Button>
+          )}
+        </div>
       </div>
     </ResourceCard>
   );
