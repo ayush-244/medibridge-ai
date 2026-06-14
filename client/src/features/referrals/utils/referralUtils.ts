@@ -1,6 +1,9 @@
-import type { ReferralStatus } from "@/lib/constants";
+import { ROLES, type ReferralStatus, type UserRole } from "@/lib/constants";
 import type { TimelineStep } from "@/features/referrals/types/referral.types";
 import type {
+  CreateReferralFormValues,
+  CreateReferralPriority,
+  CreateReferralRequest,
   Referral,
   ReferralDirection,
   ReferralFilters,
@@ -194,4 +197,135 @@ export function canRejectReferral(status: ReferralStatus): boolean {
 
 export function canCompleteReferral(status: ReferralStatus): boolean {
   return status === "ACCEPTED";
+}
+
+export function canCreateReferral(role?: UserRole | null): boolean {
+  if (!role) return false;
+
+  return (
+    role === ROLES.SUPER_ADMIN ||
+    role === ROLES.HOSPITAL_ADMIN ||
+    role === ROLES.REFERRAL_COORDINATOR
+  );
+}
+
+const priorityConditionPrefix: Record<CreateReferralPriority, string> = {
+  CRITICAL: "critical priority",
+  HIGH: "high priority injury",
+  MEDIUM: "medium priority",
+  LOW: "low priority",
+};
+
+export function buildReferralCondition(
+  values: Pick<
+    CreateReferralFormValues,
+    | "diagnosis"
+    | "conditionSummary"
+    | "priority"
+    | "gender"
+    | "requiredSpecialty"
+    | "notes"
+  >,
+): string {
+  const parts: string[] = [];
+
+  if (values.priority) {
+    parts.push(priorityConditionPrefix[values.priority]);
+  }
+
+  parts.push(values.diagnosis.trim());
+
+  if (values.conditionSummary.trim()) {
+    parts.push(values.conditionSummary.trim());
+  }
+
+  if (values.gender) {
+    parts.push(`Gender: ${values.gender.replace(/_/g, " ")}`);
+  }
+
+  if (values.requiredSpecialty.trim()) {
+    parts.push(`Specialty: ${values.requiredSpecialty.trim()}`);
+  }
+
+  if (values.notes.trim()) {
+    parts.push(`Notes: ${values.notes.trim()}`);
+  }
+
+  return parts.join(". ");
+}
+
+export function toCreateReferralRequest(
+  values: CreateReferralFormValues,
+  requestedBy: string,
+): CreateReferralRequest {
+  const age = values.age.trim() ? Number(values.age) : NaN;
+
+  if (Number.isNaN(age) || age <= 0) {
+    throw new Error("Age is required and must be a positive number");
+  }
+
+  return {
+    patientName: values.patientName.trim(),
+    age,
+    condition: buildReferralCondition(values),
+    fromHospital: values.fromHospital,
+    toHospital: values.toHospital,
+    requestedBy,
+  };
+}
+
+export function getInitialReferralFormValues(
+  defaultFromHospitalId?: string | null,
+): CreateReferralFormValues {
+  return {
+    patientName: "",
+    age: "",
+    gender: "",
+    diagnosis: "",
+    conditionSummary: "",
+    priority: "",
+    fromHospital: defaultFromHospitalId ?? "",
+    toHospital: "",
+    requiredSpecialty: "",
+    notes: "",
+  };
+}
+
+export function validateReferralForm(
+  values: CreateReferralFormValues,
+): Partial<Record<keyof CreateReferralFormValues, string>> {
+  const errors: Partial<Record<keyof CreateReferralFormValues, string>> = {};
+
+  if (!values.patientName.trim()) {
+    errors.patientName = "Patient name is required";
+  }
+
+  if (values.age.trim()) {
+    const age = Number(values.age);
+    if (Number.isNaN(age) || age <= 0) {
+      errors.age = "Age must be a positive number";
+    }
+  }
+
+  if (!values.diagnosis.trim()) {
+    errors.diagnosis = "Diagnosis is required";
+  }
+
+  if (!values.priority) {
+    errors.priority = "Priority is required";
+  }
+
+  if (!values.toHospital) {
+    errors.toHospital = "Destination hospital is required";
+  }
+
+  if (!values.fromHospital) {
+    errors.fromHospital = "Source hospital is required";
+  }
+
+  if (values.fromHospital && values.toHospital && values.fromHospital === values.toHospital) {
+    errors.toHospital = "Destination hospital must differ from source hospital";
+  }
+
+  return errors;
 }

@@ -59,3 +59,49 @@ export interface ReferralQueryParams {
   patientName?: string;
   condition?: string;
 }
+
+export const CREATE_REFERRAL_PRIORITIES = [
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "CRITICAL",
+] as const;
+
+export type CreateReferralPriority =
+  (typeof CREATE_REFERRAL_PRIORITIES)[number];
+
+export const CREATE_REFERRAL_GENDERS = [
+  "MALE",
+  "FEMALE",
+  "OTHER",
+  "PREFER_NOT_TO_SAY",
+] as const;
+
+export type CreateReferralGender =
+  (typeof CREATE_REFERRAL_GENDERS)[number];
+
+export interface CreateReferralFormValues {
+  patientName: string;
+  age: string;
+  gender: CreateReferralGender | "";
+  diagnosis: string;
+  conditionSummary: string;
+  priority: CreateReferralPriority | "";
+  fromHospital: string;
+  toHospital: string;
+  requiredSpecialty: string;
+  notes: string;
+}
+
+export interface CreateReferralRequest {
+  patientName: string;
+  age: number;
+  condition: string;
+  fromHospital: string;
+  toHospital: string;
+  requestedBy: string;
+}
+
+export type CreateReferralFormErrors = Partial<
+  Record<keyof CreateReferralFormValues, string>
+>;

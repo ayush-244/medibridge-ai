@@ -75,6 +75,7 @@ export function useReferrals(): UseReferralsReturn {
 
   useSocketEvent(SOCKET_EVENTS.REFERRAL_ACCEPTED, debouncedRefetch);
   useSocketEvent(SOCKET_EVENTS.DOCTOR_ASSIGNED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.DASHBOARD_UPDATED, debouncedRefetch);
 
   useEffect(() => {
     fetchReferrals();

@@ -3,6 +3,7 @@ import type { ApiResponse } from "@/types/api";
 import type {
   Referral,
   ReferralQueryParams,
+  CreateReferralRequest,
 } from "@/features/referrals/types/referral.types";
 
 export const referralService = {
@@ -13,6 +14,19 @@ export const referralService = {
 
     if (!data.success || !data.data) {
       throw new Error(data.message || "Failed to fetch referrals");
+    }
+
+    return data.data;
+  },
+
+  async createReferral(payload: CreateReferralRequest): Promise<Referral> {
+    const { data } = await api.post<ApiResponse<Referral>>(
+      "/referrals",
+      payload,
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to create referral");
     }
 
     return data.data;

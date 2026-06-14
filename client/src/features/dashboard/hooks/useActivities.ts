@@ -62,6 +62,7 @@ export function useActivities(enabled = true): UseActivitiesReturn {
   useSocketEvent(SOCKET_EVENTS.BED_RESERVED, debouncedRefetch, enabled);
   useSocketEvent(SOCKET_EVENTS.RESERVATION_EXPIRED, debouncedRefetch, enabled);
   useSocketEvent(SOCKET_EVENTS.DOCTOR_ASSIGNED, debouncedRefetch, enabled);
+  useSocketEvent(SOCKET_EVENTS.DASHBOARD_UPDATED, debouncedRefetch, enabled);
 
   useEffect(() => {
     fetchActivities();

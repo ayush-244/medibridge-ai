@@ -18,6 +18,7 @@ import { ReferralTable } from "@/features/referrals/components/ReferralTable";
 import { ReferralKanban } from "@/features/referrals/components/ReferralKanban";
 import { ReferralDetailDrawer } from "@/features/referrals/components/ReferralDetailDrawer";
 import { ReferralConfirmDialog } from "@/features/referrals/components/ReferralConfirmDialog";
+import { CreateReferralDialog } from "@/features/referrals/components/CreateReferralDialog";
 import { ReferralTableSkeleton } from "@/features/referrals/components/ReferralTableSkeleton";
 import { ReferralKanbanSkeleton } from "@/features/referrals/components/ReferralKanbanSkeleton";
 import {
@@ -25,6 +26,7 @@ import {
   filterReferrals,
   getUniqueHospitals,
   sortReferrals,
+  canCreateReferral,
 } from "@/features/referrals/utils/referralUtils";
 import type {
   Referral,
@@ -71,6 +73,9 @@ export function ReferralsView() {
     null,
   );
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
+  const showCreateReferral = canCreateReferral(user?.role);
 
   const debouncedSearch = useDebounce(search);
 
@@ -201,10 +206,16 @@ export function ReferralsView() {
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
-            <Button size="sm" className="gap-2" disabled title="Coming soon">
-              <Plus className="h-4 w-4" />
-              Create Referral
-            </Button>
+            {showCreateReferral && (
+              <Button
+                size="sm"
+                className="gap-2"
+                onClick={() => setCreateDialogOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                New Referral
+              </Button>
+            )}
           </div>
         }
       />
@@ -336,6 +347,12 @@ export function ReferralsView() {
           setConfirmOpen(false);
           setConfirmAction(null);
         }}
+      />
+
+      <CreateReferralDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={() => void refetch({ silent: true })}
       />
     </div>
   );
