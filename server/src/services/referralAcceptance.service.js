@@ -84,7 +84,7 @@ const acceptReferralService = async (referralId) => {
       reservationStatus:
         "CONFIRMED",
       expiresAt: new Date(
-        Date.now() + 60 * 1000
+        Date.now() + 6 * 60 * 60 * 1000
       ),
     });
 
