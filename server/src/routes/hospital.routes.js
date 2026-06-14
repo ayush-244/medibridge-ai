@@ -4,6 +4,7 @@ const {
   createHospital,
   getAllHospitals,
   getHospitalById,
+  getNearbyHospitals,
   updateBeds,
   updateHospital,
 } = require("../controllers/hospital.controller");
@@ -26,6 +27,13 @@ router.get(
   "/",
   authenticateUser,
   getAllHospitals
+);
+
+// Nearby Hospitals (must be before /:id)
+router.get(
+  "/nearby",
+  authenticateUser,
+  getNearbyHospitals
 );
 
 // Get Hospital By ID

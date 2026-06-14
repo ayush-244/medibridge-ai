@@ -1,3 +1,4 @@
+import type { HospitalLocation } from "@/features/hospitals/types/hospital.types";
 import { ROLES, type ReferralStatus, type UserRole } from "@/lib/constants";
 import type { ReservationStatus } from "@/lib/constants";
 import { isStandardSpecialization } from "@/lib/constants/specializations";
@@ -25,6 +26,13 @@ export function getHospitalCity(
 ): string {
   if (typeof hospital === "string") return "";
   return hospital.city;
+}
+
+export function getHospitalLocation(
+  hospital: Referral["fromHospital"] | Referral["toHospital"],
+): HospitalLocation | null {
+  if (typeof hospital === "string") return null;
+  return hospital.location ?? null;
 }
 
 export function formatReferralDate(date?: string): string {

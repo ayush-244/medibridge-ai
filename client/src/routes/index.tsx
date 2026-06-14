@@ -19,6 +19,7 @@ import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { UsersPage } from "@/pages/users/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
 import { DoctorDashboardPage } from "@/pages/dashboard/DoctorDashboardPage";
+import { MapsPage } from "@/pages/maps/MapsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { HomeRedirect } from "@/routes/HomeRedirect";
 
@@ -77,6 +78,12 @@ export function AppRoutes() {
               }
             >
               <Route path={ROUTES.HOSPITALS} element={<HospitalsPage />} />
+            </Route>
+
+            <Route
+              element={<RoleRoute allowedRoles={routeRoles[ROUTES.MAPS]} />}
+            >
+              <Route path={ROUTES.MAPS} element={<MapsPage />} />
             </Route>
 
             <Route

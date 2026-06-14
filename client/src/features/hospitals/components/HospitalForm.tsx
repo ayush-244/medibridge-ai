@@ -98,6 +98,8 @@ export function HospitalForm({
             "address",
             "city",
             "state",
+            "latitude",
+            "longitude",
             "totalBeds",
             "availableBeds",
             "totalICUBeds",
@@ -144,6 +146,10 @@ export function HospitalForm({
         {field("state", "State")}
       </div>
       {field("email", "Email")}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {field("latitude", "Latitude", "number")}
+        {field("longitude", "Longitude", "number")}
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {field("totalBeds", "Total Beds", "number")}
         {field("availableBeds", "Available Beds", "number")}

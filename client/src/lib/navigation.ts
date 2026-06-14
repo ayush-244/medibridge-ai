@@ -7,6 +7,7 @@ import {
   ClipboardList,
   FileText,
   LayoutDashboard,
+  Map,
   Settings,
   Stethoscope,
   Users,
@@ -102,6 +103,16 @@ export const navigationConfig: NavItem[] = [
         href: ROUTES.DOCTORS,
         icon: Stethoscope,
         roles: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
+      },
+      {
+        title: "Hospital Map",
+        href: ROUTES.MAPS,
+        icon: Map,
+        roles: [
+          ROLES.SUPER_ADMIN,
+          ROLES.HOSPITAL_ADMIN,
+          ROLES.REFERRAL_COORDINATOR,
+        ],
       },
       {
         title: "Reservations",
@@ -210,6 +221,11 @@ export const routeRoles: Record<string, UserRole[]> = {
     ROLES.REFERRAL_COORDINATOR,
   ],
   [ROUTES.HOSPITALS]: [ROLES.SUPER_ADMIN],
+  [ROUTES.MAPS]: [
+    ROLES.SUPER_ADMIN,
+    ROLES.HOSPITAL_ADMIN,
+    ROLES.REFERRAL_COORDINATOR,
+  ],
   [ROUTES.DOCTORS]: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
   [ROUTES.RESERVATIONS]: [
     ROLES.SUPER_ADMIN,
@@ -240,6 +256,7 @@ export const breadcrumbLabels: Record<string, string> = {
   inbound: "Inbound",
   outbound: "Outbound",
   hospitals: "Hospitals",
+  maps: "Hospital Map",
   doctors: "Doctors",
   reservations: "Reservations",
   reports: "Reports",

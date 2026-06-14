@@ -1,6 +1,6 @@
 export interface HospitalLocation {
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
 }
 
 export interface Hospital {
@@ -34,9 +34,22 @@ export interface CreateHospitalPayload {
   availableBeds: number;
   totalICUBeds: number;
   availableICUBeds: number;
+  location: HospitalLocation;
 }
 
 export interface UpdateHospitalPayload extends Partial<CreateHospitalPayload> {}
+
+export interface NearbyHospital extends Hospital {
+  distance: number;
+  availableDoctors: number;
+  specializations: string[];
+}
+
+export interface NearbyHospitalsQuery {
+  latitude: number;
+  longitude: number;
+  radius?: number;
+}
 
 export interface UpdateBedsPayload {
   availableBeds: number;
@@ -51,6 +64,8 @@ export interface HospitalFormValues {
   contactNumber: string;
   email: string;
   logo: string | null;
+  latitude: string;
+  longitude: string;
   totalBeds: string;
   availableBeds: string;
   totalICUBeds: string;

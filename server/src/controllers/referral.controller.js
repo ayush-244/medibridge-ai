@@ -82,8 +82,8 @@ if (req.query.patientName) {
 }
 
     const referrals = await Referral.find(query)
-      .populate("fromHospital", "name city")
-      .populate("toHospital", "name city")
+      .populate("fromHospital", "name city location logo")
+      .populate("toHospital", "name city location logo")
       .populate("requestedBy", "name email");
 
     res.status(200).json({

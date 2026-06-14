@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ReferralForm } from "@/features/referrals/components/ReferralForm";
+import { useDoctors } from "@/features/doctors/hooks/useDoctors";
 import { useHospitals } from "@/features/hospitals/hooks/useHospitals";
 import { useCreateReferral } from "@/features/referrals/hooks/useCreateReferral";
 import type { CreateReferralFormValues } from "@/features/referrals/types/referral.types";
@@ -26,6 +27,7 @@ export function CreateReferralDialog({
 }: CreateReferralDialogProps) {
   const { user } = useAuth();
   const { hospitals } = useHospitals();
+  const { doctors } = useDoctors();
   const { createReferral, isSubmitting } = useCreateReferral();
 
   const defaultFromHospitalId =
@@ -69,6 +71,7 @@ export function CreateReferralDialog({
         <ReferralForm
           key={`${open}-${defaultFromHospitalId ?? "all"}`}
           hospitals={hospitals}
+          doctors={doctors}
           defaultFromHospitalId={defaultFromHospitalId}
           isSubmitting={isSubmitting}
           onSubmit={(values) => void handleSubmit(values)}

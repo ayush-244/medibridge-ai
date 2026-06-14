@@ -62,6 +62,8 @@ export function toHospitalFormValues(hospital?: Hospital): HospitalFormValues {
       contactNumber: "",
       email: "",
       logo: null,
+      latitude: "",
+      longitude: "",
       totalBeds: "",
       availableBeds: "",
       totalICUBeds: "",
@@ -77,6 +79,14 @@ export function toHospitalFormValues(hospital?: Hospital): HospitalFormValues {
     contactNumber: hospital.contactNumber || "",
     email: hospital.email || "",
     logo: hospital.logo ?? null,
+    latitude:
+      hospital.location?.latitude != null
+        ? String(hospital.location.latitude)
+        : "",
+    longitude:
+      hospital.location?.longitude != null
+        ? String(hospital.location.longitude)
+        : "",
     totalBeds: String(hospital.totalBeds),
     availableBeds: String(hospital.availableBeds),
     totalICUBeds: String(hospital.totalICUBeds),
@@ -89,6 +99,17 @@ export function validateHospitalForm(values: HospitalFormValues): string | null 
   if (!values.address.trim()) return "Address is required";
   if (!values.city.trim()) return "City is required";
   if (!values.state.trim()) return "State is required";
+
+  const latitude = Number(values.latitude);
+  const longitude = Number(values.longitude);
+
+  if (Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
+    return "Latitude must be a number between -90 and 90";
+  }
+
+  if (Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
+    return "Longitude must be a number between -180 and 180";
+  }
 
   const totalBeds = Number(values.totalBeds);
   const availableBeds = Number(values.availableBeds);
@@ -140,5 +161,25 @@ export function toCreateHospitalPayload(
     availableBeds: Number(values.availableBeds),
     totalICUBeds: Number(values.totalICUBeds),
     availableICUBeds: Number(values.availableICUBeds),
+    location: {
+      latitude: Number(values.latitude),
+      longitude: Number(values.longitude),
+    },
   };
+}
+
+export function hasHospitalCoordinates(
+  hospital: Pick<Hospital, "location">,
+): boolean {
+  return (
+    hospital.location?.latitude != null &&
+    hospital.location?.longitude != null
+  );
+}
+
+export function getGoogleMapsUrl(
+  latitude: number,
+  longitude: number,
+): string {
+  return `https://www.google.com/maps?q=${latitude},${longitude}`;
 }

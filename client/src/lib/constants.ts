@@ -71,5 +71,8 @@ export const RESERVATION_DURATIONS = [1, 2, 4, 6, 12, 24] as const;
 
 export type ReservationDuration = (typeof RESERVATION_DURATIONS)[number];
 
+export const OPENROUTESERVICE_API_KEY =
+  import.meta.env.VITE_OPENROUTESERVICE_API_KEY || "";
+
 export const SOCKET_URL =
   import.meta.env.VITE_SOCKET_URL || "http://localhost:5000";

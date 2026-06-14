@@ -1,10 +1,35 @@
 const Hospital = require("../models/Hospital");
+const Doctor = require("../models/Doctor");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
+const calculateDistance = require("../utils/distance");
 const {
   isValidEmail,
   isValidPhone,
 } = require("../utils/validators");
+
+const validateLocation = (location) => {
+  if (
+    !location ||
+    location.latitude == null ||
+    location.longitude == null
+  ) {
+    return "Latitude and longitude are required";
+  }
+
+  const latitude = Number(location.latitude);
+  const longitude = Number(location.longitude);
+
+  if (Number.isNaN(latitude) || latitude < -90 || latitude > 90) {
+    return "Latitude must be a number between -90 and 90";
+  }
+
+  if (Number.isNaN(longitude) || longitude < -180 || longitude > 180) {
+    return "Longitude must be a number between -180 and 180";
+  }
+
+  return null;
+};
 
 const createHospital = async (req, res) => {
   try {
@@ -67,6 +92,14 @@ const createHospital = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Available ICU beds cannot exceed total ICU beds",
+      });
+    }
+
+    const locationError = validateLocation(location);
+    if (locationError) {
+      return res.status(400).json({
+        success: false,
+        message: locationError,
       });
     }
 
@@ -243,6 +276,7 @@ const updateHospital = async (req, res) => {
       totalICUBeds,
       availableICUBeds,
       logo,
+      location,
     } = req.body;
 
     if (name) {
@@ -287,6 +321,19 @@ const updateHospital = async (req, res) => {
     if (availableBeds !== undefined) hospital.availableBeds = availableBeds;
     if (availableICUBeds !== undefined) {
       hospital.availableICUBeds = availableICUBeds;
+    }
+    if (location !== undefined) {
+      const locationError = validateLocation(location);
+      if (locationError) {
+        return res.status(400).json({
+          success: false,
+          message: locationError,
+        });
+      }
+      hospital.location = {
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
+      };
     }
 
     if (hospital.availableBeds > hospital.totalBeds) {
@@ -334,10 +381,98 @@ const updateHospital = async (req, res) => {
   }
 };
 
+const getNearbyHospitals = async (req, res) => {
+  try {
+    const latitude = Number(req.query.latitude);
+    const longitude = Number(req.query.longitude);
+    const radius = Number(req.query.radius) || 100;
+
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid latitude and longitude query parameters are required",
+      });
+    }
+
+    if (Number.isNaN(radius) || radius <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Radius must be a positive number (kilometers)",
+      });
+    }
+
+    const hospitals = await Hospital.find({
+      "location.latitude": { $ne: null },
+      "location.longitude": { $ne: null },
+    });
+
+    const doctors = await Doctor.find({ status: "AVAILABLE" }).select(
+      "hospital specialization",
+    );
+
+    const doctorsByHospital = doctors.reduce((acc, doctor) => {
+      const key = String(doctor.hospital);
+      if (!acc[key]) {
+        acc[key] = { count: 0, specializations: new Set() };
+      }
+      acc[key].count += 1;
+      acc[key].specializations.add(doctor.specialization);
+      return acc;
+    }, {});
+
+    const result = hospitals
+      .map((hospital) => {
+        const distance = calculateDistance(
+          latitude,
+          longitude,
+          hospital.location.latitude,
+          hospital.location.longitude,
+        );
+
+        const doctorInfo = doctorsByHospital[String(hospital._id)] || {
+          count: 0,
+          specializations: new Set(),
+        };
+
+        return {
+          _id: hospital._id,
+          name: hospital.name,
+          city: hospital.city,
+          state: hospital.state,
+          address: hospital.address,
+          logo: hospital.logo,
+          availableBeds: hospital.availableBeds,
+          totalBeds: hospital.totalBeds,
+          availableICUBeds: hospital.availableICUBeds,
+          location: hospital.location,
+          distance: Number(distance.toFixed(2)),
+          availableDoctors: doctorInfo.count,
+          specializations: Array.from(doctorInfo.specializations),
+        };
+      })
+      .filter((hospital) => hospital.distance <= radius)
+      .sort((a, b) => a.distance - b.distance);
+
+    res.status(200).json({
+      success: true,
+      count: result.length,
+      data: result,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   createHospital,
   getAllHospitals,
   getHospitalById,
+  getNearbyHospitals,
   updateBeds,
   updateHospital,
 };

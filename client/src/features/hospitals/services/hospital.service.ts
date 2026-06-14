@@ -3,6 +3,8 @@ import type { ApiResponse } from "@/types/api";
 import type {
   CreateHospitalPayload,
   Hospital,
+  NearbyHospital,
+  NearbyHospitalsQuery,
   UpdateBedsPayload,
   UpdateHospitalPayload,
 } from "@/features/hospitals/types/hospital.types";
@@ -62,6 +64,19 @@ export const hospitalService = {
 
     if (!data.success || !data.data) {
       throw new Error(data.message || "Failed to update bed availability");
+    }
+
+    return data.data;
+  },
+
+  async getNearby(params: NearbyHospitalsQuery): Promise<NearbyHospital[]> {
+    const { data } = await api.get<ApiResponse<NearbyHospital[]>>(
+      "/hospitals/nearby",
+      { params },
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to fetch nearby hospitals");
     }
 
     return data.data;

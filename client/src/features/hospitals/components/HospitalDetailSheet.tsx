@@ -13,6 +13,7 @@ import { HospitalStatusBadge } from "@/components/common/StatusBadge";
 import { HospitalAvatar } from "@/components/common/HospitalAvatar";
 import { HospitalAnalyticsTab } from "@/features/hospitals/components/HospitalAnalyticsTab";
 import { HospitalDoctorsTab } from "@/features/hospitals/components/HospitalDoctorsTab";
+import { HospitalLocationMap } from "@/features/maps/components/HospitalLocationMap";
 import {
   getBedOccupancyRate,
   getHospitalCapacityStatus,
@@ -21,7 +22,7 @@ import {
 import type { Hospital } from "@/features/hospitals/types/hospital.types";
 import { cn } from "@/lib/utils";
 
-type HospitalDetailTab = "overview" | "doctors" | "analytics";
+type HospitalDetailTab = "overview" | "location" | "doctors" | "analytics";
 
 interface DetailRowProps {
   label: string;
@@ -65,6 +66,7 @@ function DetailSection({
 
 const TABS: { id: HospitalDetailTab; label: string }[] = [
   { id: "overview", label: "Overview" },
+  { id: "location", label: "Location" },
   { id: "doctors", label: "Doctors" },
   { id: "analytics", label: "Analytics" },
 ];
@@ -197,6 +199,14 @@ export function HospitalDetailSheet({
                     />
                   </DetailSection>
                 </>
+              )}
+
+              {activeTab === "location" && (
+                <HospitalLocationMap
+                  name={hospital.name}
+                  location={hospital.location}
+                  className="h-[320px]"
+                />
               )}
 
               {activeTab === "doctors" && (

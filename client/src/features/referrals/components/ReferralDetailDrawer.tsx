@@ -14,6 +14,7 @@ import {
 } from "@/components/common/StatusBadge";
 import { ReferralDrawerSkeleton } from "@/features/referrals/components/ReferralDrawerSkeleton";
 import { ReferralTimeline } from "@/features/referrals/components/ReferralTimeline";
+import { ReferralRouteMap } from "@/features/maps/components/ReferralRouteMap";
 import { useReferralReservation } from "@/features/referrals/hooks/useReferralReservation";
 import { getReferralPriority } from "@/features/referrals/utils/severity";
 import {
@@ -22,6 +23,7 @@ import {
   canRejectReferral,
   formatReferralDate,
   getHospitalCity,
+  getHospitalLocation,
   getHospitalName,
   getReferralLifecycleSteps,
 } from "@/features/referrals/utils/referralUtils";
@@ -127,6 +129,17 @@ export function ReferralDetailDrawer({
                 value={getHospitalCity(referral.toHospital) || "—"}
               />
             </div>
+          </div>
+
+          <div>
+            <h4 className="mb-2 text-sm font-semibold">Route Overview</h4>
+            <ReferralRouteMap
+              sourceName={getHospitalName(referral.fromHospital)}
+              destinationName={getHospitalName(referral.toHospital)}
+              sourceLocation={getHospitalLocation(referral.fromHospital)}
+              destinationLocation={getHospitalLocation(referral.toHospital)}
+              className="h-[280px]"
+            />
           </div>
 
           <div>

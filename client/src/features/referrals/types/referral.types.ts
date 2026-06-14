@@ -1,9 +1,12 @@
+import type { HospitalLocation } from "@/features/hospitals/types/hospital.types";
 import type { ReferralStatus } from "@/lib/constants";
 
 export interface ReferralHospital {
   _id: string;
   name: string;
   city: string;
+  location?: HospitalLocation;
+  logo?: string | null;
 }
 
 export interface ReferralUser {

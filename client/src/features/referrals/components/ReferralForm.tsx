@@ -17,7 +17,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SPECIALIZATIONS } from "@/lib/constants/specializations";
+import type { Doctor } from "@/features/doctors/types/doctor.types";
 import type { Hospital } from "@/features/hospitals/types/hospital.types";
+import { DestinationHospitalPicker } from "@/features/maps/components/DestinationHospitalPicker";
 import {
   CREATE_REFERRAL_GENDERS,
   CREATE_REFERRAL_PRIORITIES,
@@ -31,6 +33,7 @@ import {
 
 interface ReferralFormProps {
   hospitals: Hospital[];
+  doctors: Doctor[];
   defaultFromHospitalId?: string | null;
   isSubmitting: boolean;
   onSubmit: (values: CreateReferralFormValues) => void;
@@ -72,6 +75,7 @@ function formatPriorityLabel(value: (typeof CREATE_REFERRAL_PRIORITIES)[number])
 
 export function ReferralForm({
   hospitals,
+  doctors,
   defaultFromHospitalId,
   isSubmitting,
   onSubmit,
@@ -252,18 +256,15 @@ export function ReferralForm({
             htmlFor="toHospital"
             error={errors.toHospital}
           >
-            <Select
-              id="toHospital"
+            <DestinationHospitalPicker
+              hospitals={hospitals}
+              doctors={doctors}
+              sourceHospitalId={values.fromHospital}
               value={values.toHospital}
-              onChange={(event) => updateField("toHospital", event.target.value)}
-            >
-              <option value="">Select destination hospital</option>
-              {hospitals.map((hospital) => (
-                <option key={hospital._id} value={hospital._id}>
-                  {hospital.name} — {hospital.city}
-                </option>
-              ))}
-            </Select>
+              requiredSpecialty={values.requiredSpecialty}
+              error={errors.toHospital}
+              onChange={(hospitalId) => updateField("toHospital", hospitalId)}
+            />
           </FormField>
 
           <FormField
