@@ -4,6 +4,10 @@ import type {
   DoctorFilters,
   DoctorFormValues,
 } from "@/features/doctors/types/doctor.types";
+import {
+  SPECIALIZATIONS,
+  isStandardSpecialization,
+} from "@/lib/constants/specializations";
 
 export function getDoctorUtilization(doctor: Doctor): number {
   if (doctor.maxPatients === 0) return 0;
@@ -21,7 +25,12 @@ export function getDoctorHospitalCity(doctor: Doctor): string {
 }
 
 export function getUniqueSpecializations(doctors: Doctor[]): string[] {
-  const specs = new Set(doctors.map((d) => d.specialization));
+  const specs = new Set<string>(SPECIALIZATIONS);
+  doctors.forEach((doctor) => {
+    if (doctor.specialization) {
+      specs.add(doctor.specialization);
+    }
+  });
   return Array.from(specs).sort();
 }
 
@@ -80,9 +89,18 @@ export function toDoctorFormValues(doctor?: Doctor): DoctorFormValues {
   };
 }
 
-export function validateDoctorForm(values: DoctorFormValues): string | null {
+export function validateDoctorForm(
+  values: DoctorFormValues,
+  legacySpecialization?: string,
+): string | null {
   if (!values.name.trim()) return "Name is required";
   if (!values.specialization.trim()) return "Specialization is required";
+  if (
+    !isStandardSpecialization(values.specialization) &&
+    values.specialization !== legacySpecialization
+  ) {
+    return "Select a valid specialization";
+  }
   if (!values.hospital) return "Hospital is required";
   if (values.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email)) {
     return "Enter a valid email address";

@@ -3,13 +3,20 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SPECIALIZATIONS } from "@/lib/constants/specializations";
 import type { Hospital } from "@/features/hospitals/types/hospital.types";
 import {
   CREATE_REFERRAL_GENDERS,
@@ -264,14 +271,23 @@ export function ReferralForm({
             htmlFor="requiredSpecialty"
             error={errors.requiredSpecialty}
           >
-            <Input
-              id="requiredSpecialty"
+            <Select
               value={values.requiredSpecialty}
-              onChange={(event) =>
-                updateField("requiredSpecialty", event.target.value)
+              onValueChange={(specialty) =>
+                updateField("requiredSpecialty", specialty)
               }
-              placeholder="e.g. Cardiology"
-            />
+            >
+              <SelectTrigger id="requiredSpecialty">
+                <SelectValue placeholder="Select required specialty" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPECIALIZATIONS.map((specialization) => (
+                  <SelectItem key={specialization} value={specialization}>
+                    {specialization}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </FormField>
 
           <div className="sm:col-span-2">

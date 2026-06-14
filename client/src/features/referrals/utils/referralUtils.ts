@@ -1,4 +1,5 @@
 import { ROLES, type ReferralStatus, type UserRole } from "@/lib/constants";
+import { isStandardSpecialization } from "@/lib/constants/specializations";
 import type { TimelineStep } from "@/features/referrals/types/referral.types";
 import type {
   CreateReferralFormValues,
@@ -313,6 +314,12 @@ export function validateReferralForm(
 
   if (!values.priority) {
     errors.priority = "Priority is required";
+  }
+
+  if (!values.requiredSpecialty) {
+    errors.requiredSpecialty = "Required specialty is required";
+  } else if (!isStandardSpecialization(values.requiredSpecialty)) {
+    errors.requiredSpecialty = "Select a valid required specialty";
   }
 
   if (!values.toHospital) {

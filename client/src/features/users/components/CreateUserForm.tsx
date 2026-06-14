@@ -1,8 +1,15 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { MANAGEABLE_ROLES } from "@/lib/constants";
+import { SPECIALIZATIONS } from "@/lib/constants/specializations";
 import { useHospitals } from "@/features/hospitals/hooks/useHospitals";
 import { validateCreateUserForm } from "@/features/users/utils/userUtils";
 import type { CreateUserFormValues } from "@/features/users/types/user.types";
@@ -140,14 +147,23 @@ export function CreateUserForm({
             <label className="text-sm font-medium text-text-primary">
               Specialization
             </label>
-            <Input
+            <Select
               value={values.specialization}
-              onChange={(e) =>
-                setValues({ ...values, specialization: e.target.value })
+              onValueChange={(specialization) =>
+                setValues({ ...values, specialization })
               }
-              placeholder="e.g. Cardiology"
-              required
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select specialization" />
+              </SelectTrigger>
+              <SelectContent>
+                {SPECIALIZATIONS.map((specialization) => (
+                  <SelectItem key={specialization} value={specialization}>
+                    {specialization}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-text-primary">

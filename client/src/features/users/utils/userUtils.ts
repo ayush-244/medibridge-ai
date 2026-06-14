@@ -1,4 +1,5 @@
 import type { UserRole, UserStatus } from "@/lib/constants";
+import { isStandardSpecialization } from "@/lib/constants/specializations";
 import type { User, UserFilters } from "@/features/users/types/user.types";
 
 export function getUserStatus(user: User): UserStatus {
@@ -85,6 +86,13 @@ export function validateCreateUserForm(values: {
 
   if (values.role === "DOCTOR" && !values.specialization.trim()) {
     return "Specialization is required for doctors";
+  }
+
+  if (
+    values.role === "DOCTOR" &&
+    !isStandardSpecialization(values.specialization)
+  ) {
+    return "Select a valid specialization for doctors";
   }
 
   return null;
