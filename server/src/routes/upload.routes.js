@@ -10,8 +10,10 @@ const router = express.Router();
 
 const uploadDir = path.join(__dirname, "../../uploads/doctors");
 const hospitalUploadDir = path.join(__dirname, "../../uploads/hospitals");
+const userUploadDir = path.join(__dirname, "../../uploads/users");
 fs.mkdirSync(uploadDir, { recursive: true });
 fs.mkdirSync(hospitalUploadDir, { recursive: true });
+fs.mkdirSync(userUploadDir, { recursive: true });
 
 const allowedMimeTypes = new Set([
   "image/jpeg",
@@ -151,5 +153,65 @@ router.post(
     });
   },
 );
+
+const userStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, userUploadDir);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const safeExt = ext === ".jpeg" ? ".jpg" : ext;
+    const uniqueName = `user-${Date.now()}-${Math.round(
+      Math.random() * 1e9,
+    )}${safeExt}`;
+    cb(null, uniqueName);
+  },
+});
+
+const uploadUserPhoto = multer({
+  storage: userStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const allowedExtension = [".jpg", ".jpeg", ".png", ".webp"].includes(ext);
+
+    if (!allowedMimeTypes.has(file.mimetype) || !allowedExtension) {
+      cb(new Error("Only JPG, JPEG, PNG, and WEBP images are allowed"));
+      return;
+    }
+
+    cb(null, true);
+  },
+});
+
+router.post("/user-photo", authenticateUser, (req, res) => {
+  uploadUserPhoto.single("photo")(req, res, (error) => {
+    if (error) {
+      const message =
+        error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE"
+          ? "User photo must be 5 MB or smaller"
+          : error.message || "Failed to upload user photo";
+
+      return res.status(400).json({
+        success: false,
+        message,
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "User photo is required",
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      url: `/uploads/users/${req.file.filename}`,
+    });
+  });
+});
 
 module.exports = router;

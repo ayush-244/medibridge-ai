@@ -6,6 +6,9 @@ import { TopNavbar } from "@/components/layout/TopNavbar";
 import { RealtimeToasts } from "@/components/layout/RealtimeToasts";
 import { SocketProvider } from "@/context/SocketContext";
 import { NotificationsProvider } from "@/features/notifications";
+import { useAuth } from "@/hooks/useAuth";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { SOCKET_EVENTS, type UserEventPayload } from "@/types/socket";
 
 interface AppLayoutShellProps {
   collapsed: boolean;
@@ -50,6 +53,22 @@ function AppLayoutShell({
   );
 }
 
+function AuthProfileSync() {
+  const { user, refreshProfile } = useAuth();
+
+  useSocketEvent(
+    SOCKET_EVENTS.USER_UPDATED,
+    (event: UserEventPayload) => {
+      if (event.userId === user?.id) {
+        void refreshProfile();
+      }
+    },
+    Boolean(user?.id),
+  );
+
+  return null;
+}
+
 export function AppLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -69,6 +88,7 @@ export function AppLayout() {
   return (
     <SocketProvider>
       <NotificationsProvider>
+        <AuthProfileSync />
         <RealtimeToasts />
         <AppLayoutShell
           collapsed={collapsed}

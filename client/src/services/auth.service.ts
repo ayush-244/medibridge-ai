@@ -16,6 +16,12 @@ interface ProfileResponse {
   user: AuthUser;
 }
 
+interface UploadUserPhotoResponse {
+  success?: boolean;
+  url?: string;
+  message?: string;
+}
+
 export const authService = {
   async login(credentials: LoginCredentials): Promise<string> {
     const { data } = await api.post<ApiResponse & LoginResponse>(
@@ -53,6 +59,27 @@ export const authService = {
     }
 
     return data.data;
+  },
+
+  async uploadUserPhoto(file: File): Promise<string> {
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    const { data } = await api.post<UploadUserPhotoResponse>(
+      "/upload/user-photo",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      },
+    );
+
+    if (!data.url) {
+      throw new Error(data.message || "Failed to upload profile photo");
+    }
+
+    return data.url;
   },
 
   async changePassword(payload: ChangePasswordPayload): Promise<void> {

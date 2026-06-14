@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { authService } from "@/services/auth.service";
+import { useAuth } from "@/hooks/useAuth";
 import type {
   AuthUser,
   ChangePasswordPayload,
@@ -16,6 +17,7 @@ const defaultPreferences: NotificationPreferences = {
 };
 
 export function useSettings() {
+  const { refreshProfile } = useAuth();
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -38,16 +40,35 @@ export function useSettings() {
     fetchProfile();
   }, [fetchProfile]);
 
-  const updateProfile = useCallback(async (payload: UpdateProfilePayload) => {
+  const updateProfile = useCallback(
+    async (payload: UpdateProfilePayload) => {
+      setIsSaving(true);
+      try {
+        const updated = await authService.updateProfile(payload);
+        setProfile(updated);
+        await refreshProfile();
+        showSuccessToast("Profile updated");
+        return updated;
+      } catch (err) {
+        showErrorToast(
+          (err as { message?: string })?.message || "Failed to update profile",
+        );
+        return null;
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [refreshProfile],
+  );
+
+  const uploadUserPhoto = useCallback(async (file: File) => {
     setIsSaving(true);
     try {
-      const updated = await authService.updateProfile(payload);
-      setProfile(updated);
-      showSuccessToast("Profile updated");
-      return updated;
+      return await authService.uploadUserPhoto(file);
     } catch (err) {
       showErrorToast(
-        (err as { message?: string })?.message || "Failed to update profile",
+        (err as { message?: string })?.message ||
+          "Failed to upload profile photo",
       );
       return null;
     } finally {
@@ -105,6 +126,7 @@ export function useSettings() {
     isLoading,
     isSaving,
     updateProfile,
+    uploadUserPhoto,
     changePassword,
     updatePreferences,
     refetch: fetchProfile,

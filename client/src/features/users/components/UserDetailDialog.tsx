@@ -6,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { DoctorAvatar } from "@/components/common/DoctorAvatar";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { UserStatusBadge } from "@/features/users/components/UserStatusBadge";
 import {
   formatRoleLabel,
@@ -51,8 +52,13 @@ export function UserDetailDialog({
         ) : user ? (
           <>
             <DialogHeader>
-              <DialogTitle>{user.name}</DialogTitle>
-              <DialogDescription>{user.email}</DialogDescription>
+              <div className="flex items-center gap-4">
+                <UserAvatar user={user} size="xl" />
+                <div>
+                  <DialogTitle>{user.name}</DialogTitle>
+                  <DialogDescription>{user.email}</DialogDescription>
+                </div>
+              </div>
             </DialogHeader>
             <div className="divide-y divide-border rounded-lg border border-border px-4">
               <DetailRow

@@ -16,8 +16,9 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<AuthUser>;
   logout: () => void;
+  refreshProfile: () => Promise<AuthUser | null>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -51,6 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = ROUTES.LOGIN;
   }, []);
 
+  const refreshProfile = useCallback(async () => {
+    if (!token) return null;
+
+    const profile = await authService.getProfile();
+    persistAuth(token, profile);
+    setUser(profile);
+    return profile;
+  }, [token]);
+
   const login = useCallback(async (credentials: LoginCredentials) => {
     const newToken = await authService.login(credentials);
   
@@ -65,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
     persistAuth(newToken, profile);
     setUser(profile);
+    return profile;
   }, []);
 
   useEffect(() => {
@@ -100,8 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       login,
       logout,
+      refreshProfile,
     }),
-    [user, token, isLoading, login, logout],
+    [user, token, isLoading, login, logout, refreshProfile],
   );
 
   return (

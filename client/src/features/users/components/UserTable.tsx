@@ -1,5 +1,6 @@
 import { Eye, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { UserStatusBadge } from "@/features/users/components/UserStatusBadge";
 import {
   formatRoleLabel,
@@ -28,7 +29,15 @@ export function UserTable({
         <table className="w-full min-w-[900px]">
           <thead className="sticky top-0 z-10 border-b border-border bg-gray-50/95 backdrop-blur-sm">
             <tr>
-              {["Name", "Email", "Role", "Hospital", "Status", "Created", "Actions"].map(
+              {[
+                "User",
+                "Email",
+                "Role",
+                "Hospital",
+                "Status",
+                "Created",
+                "Actions",
+              ].map(
                 (label) => (
                   <th
                     key={label}
@@ -51,7 +60,10 @@ export function UserTable({
                   className="border-b border-border last:border-0 hover:bg-gray-50/50"
                 >
                   <td className="px-4 py-3 text-sm font-medium text-text-primary">
-                    {user.name}
+                    <div className="flex items-center gap-3">
+                      <UserAvatar user={user} size="sm" />
+                      <span>{user.name}</span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-text-secondary">
                     {user.email}

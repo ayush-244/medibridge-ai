@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import { userService } from "@/features/users/services/user.service";
 import type { UserDetail } from "@/features/users/types/user.types";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { showErrorToast } from "@/lib/toast";
+import { SOCKET_EVENTS } from "@/types/socket";
 
 interface UseUserDetailReturn {
   user: UserDetail | null;
@@ -31,6 +33,16 @@ export function useUserDetail(): UseUserDetailReturn {
   }, []);
 
   const clearUser = useCallback(() => setUser(null), []);
+
+  useSocketEvent(
+    SOCKET_EVENTS.USER_UPDATED,
+    (event) => {
+      if (user?._id === event.userId) {
+        void fetchUser(event.userId);
+      }
+    },
+    Boolean(user?._id),
+  );
 
   return { user, isLoading, fetchUser, clearUser };
 }

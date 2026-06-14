@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { ROUTES } from "@/lib/routes";
+import { getDefaultRouteForRole } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,17 +14,16 @@ import {
 } from "@/components/ui/card";
 
 export function LoginPage() {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const from =
-    (location.state as { from?: { pathname: string } })?.from?.pathname ||
-    ROUTES.DASHBOARD;
+  const authenticatedTarget = user
+    ? getDefaultRouteForRole(user.role)
+    : "/";
 
   if (isLoading) {
     return (
@@ -35,7 +34,7 @@ export function LoginPage() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={from} replace />;
+    return <Navigate to={authenticatedTarget} replace />;
   }
 
   const handleSubmit = async (e: FormEvent) => {
@@ -44,8 +43,8 @@ export function LoginPage() {
     setSubmitting(true);
 
     try {
-      await login({ email, password });
-      navigate(from, { replace: true });
+      const profile = await login({ email, password });
+      navigate(getDefaultRouteForRole(profile.role), { replace: true });
     } catch (err) {
       const message =
         err instanceof Error

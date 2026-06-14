@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Menu, Search } from "lucide-react";
-import { breadcrumbLabels } from "@/lib/navigation";
+import { breadcrumbLabels, getDefaultRouteForRole } from "@/lib/navigation";
 import { ROUTES } from "@/lib/routes";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { ConnectionStatusIndicator } from "@/components/layout/ConnectionStatusIndicator";
 import { NotificationBell } from "@/features/notifications";
 
@@ -22,21 +22,10 @@ interface TopNavbarProps {
   onMobileMenuOpen: () => void;
 }
 
-function getInitials(name?: string, email?: string) {
-  if (name) {
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  }
-  return email?.slice(0, 2).toUpperCase() || "MB";
-}
-
 export function TopNavbar({ onMobileMenuOpen }: TopNavbarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const homeRoute = user ? getDefaultRouteForRole(user.role) : ROUTES.DASHBOARD;
 
   const pathSegments = location.pathname.split("/").filter(Boolean);
   const breadcrumbs = pathSegments.map((segment, index) => {
@@ -62,7 +51,7 @@ export function TopNavbar({ onMobileMenuOpen }: TopNavbarProps) {
 
       <nav className="hidden min-w-0 items-center gap-1 text-sm md:flex">
         <Link
-          to={ROUTES.DASHBOARD}
+          to={homeRoute}
           className="text-text-secondary transition-colors hover:text-text-primary"
         >
           Home
@@ -103,11 +92,7 @@ export function TopNavbar({ onMobileMenuOpen }: TopNavbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-9 gap-2 px-2">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs">
-                  {getInitials(user?.name, user?.email)}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar user={user ?? {}} size="sm" />
               <span className="hidden text-sm font-medium md:inline-block">
                 {user?.name || user?.email || "User"}
               </span>

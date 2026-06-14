@@ -1,14 +1,11 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
-import { ROLES } from "@/lib/constants";
-import { ROUTES } from "@/lib/routes";
+import { getDefaultRouteForRole } from "@/lib/navigation";
 
 export function HomeRedirect() {
   const { user } = useAuth();
 
-  if (user?.role === ROLES.DOCTOR) {
-    return <Navigate to={ROUTES.DOCTOR_DASHBOARD} replace />;
-  }
+  if (!user) return null;
 
-  return <Navigate to={ROUTES.DASHBOARD} replace />;
+  return <Navigate to={getDefaultRouteForRole(user.role)} replace />;
 }

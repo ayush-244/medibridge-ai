@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { getDefaultRouteForRole } from "@/lib/navigation";
 import { ROUTES } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +13,11 @@ import {
 } from "@/components/ui/card";
 
 export function UnauthorizedPage() {
+  const { user } = useAuth();
+  const dashboardRoute = user
+    ? getDefaultRouteForRole(user.role)
+    : ROUTES.DASHBOARD;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md text-center">
@@ -25,7 +32,7 @@ export function UnauthorizedPage() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <Button asChild>
-            <Link to={ROUTES.DASHBOARD}>Go to Dashboard</Link>
+            <Link to={dashboardRoute}>Go to Dashboard</Link>
           </Button>
           <Button variant="secondary" asChild>
             <Link to={ROUTES.LOGIN}>Back to Login</Link>

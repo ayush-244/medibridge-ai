@@ -183,6 +183,10 @@ export function getNavigationForRole(role: UserRole): NavItem[] {
     .filter((item) => item.href || (item.children && item.children.length > 0));
 }
 
+export function getDefaultRouteForRole(role: UserRole): string {
+  return role === ROLES.DOCTOR ? ROUTES.DOCTOR_DASHBOARD : ROUTES.DASHBOARD;
+}
+
 export const routeRoles: Record<string, UserRole[]> = {
   [ROUTES.DASHBOARD]: [
     ROLES.SUPER_ADMIN,

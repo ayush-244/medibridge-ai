@@ -270,6 +270,7 @@ const getProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        profilePhoto: user.profilePhoto,
         role: user.role,
         hospital: user.hospital?._id || user.hospital,
         hospitalName: user.hospital?.name,
@@ -287,7 +288,7 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const { name, phone, profilePhoto } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -300,6 +301,9 @@ const updateProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (phone !== undefined) user.phone = phone;
+    if (profilePhoto !== undefined) {
+      user.profilePhoto = profilePhoto || null;
+    }
 
     await user.save();
 
@@ -317,6 +321,7 @@ const updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
+        profilePhoto: user.profilePhoto,
         role: user.role,
         hospital: user.hospital,
         notificationPreferences: user.notificationPreferences,

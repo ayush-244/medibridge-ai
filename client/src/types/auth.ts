@@ -15,6 +15,7 @@ export interface AuthUser {
   name?: string;
   email?: string;
   phone?: string;
+  profilePhoto?: string | null;
   notificationPreferences?: NotificationPreferences;
 }
 
@@ -38,6 +39,7 @@ export interface StoredAuth {
 export interface UpdateProfilePayload {
   name?: string;
   phone?: string;
+  profilePhoto?: string | null;
 }
 
 export interface ChangePasswordPayload {

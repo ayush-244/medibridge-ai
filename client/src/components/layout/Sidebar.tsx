@@ -8,31 +8,21 @@ import {
   Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getNavigationForRole } from "@/lib/navigation";
-import { ROUTES } from "@/lib/routes";
+import {
+  getDefaultRouteForRole,
+  getNavigationForRole,
+} from "@/lib/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/common/UserAvatar";
 
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   mobileOpen: boolean;
   onMobileClose: () => void;
-}
-
-function getInitials(name?: string, email?: string) {
-  if (name) {
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  }
-  return email?.slice(0, 2).toUpperCase() || "MB";
 }
 
 export function Sidebar({
@@ -52,6 +42,7 @@ export function Sidebar({
   if (!user) return null;
 
   const navItems = getNavigationForRole(user.role);
+  const homeRoute = getDefaultRouteForRole(user.role);
 
   const toggleSection = (title: string) => {
     setExpandedSections((prev) =>
@@ -73,7 +64,7 @@ export function Sidebar({
         )}
       >
         {!collapsed && (
-          <Link to={ROUTES.DASHBOARD} className="flex items-center gap-2">
+          <Link to={homeRoute} className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white">
               <Activity className="h-4 w-4" />
             </div>
@@ -174,11 +165,7 @@ export function Sidebar({
             collapsed && "justify-center",
           )}
         >
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="text-xs">
-              {getInitials(user.name, user.email)}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar user={user} size="sm" />
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PageHeader } from "@/components/common/PageHeader";
+import { UserAvatar } from "@/components/common/UserAvatar";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 import type { NotificationPreferences } from "@/types/auth";
 import { getPhoneError } from "@/lib/validation";
@@ -55,6 +56,7 @@ export function SettingsView() {
     isLoading,
     isSaving,
     updateProfile,
+    uploadUserPhoto,
     changePassword,
     updatePreferences,
   } = useSettings();
@@ -64,6 +66,8 @@ export function SettingsView() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [removePhoto, setRemovePhoto] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
@@ -74,13 +78,54 @@ export function SettingsView() {
     }
   }, [profile, initialized]);
 
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    if (!file) return;
+
+    const allowedTypes = new Set([
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+    ]);
+
+    if (!allowedTypes.has(file.type)) {
+      event.target.value = "";
+      showErrorToast("Upload a JPG, JPEG, PNG, or WEBP image");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      event.target.value = "";
+      showErrorToast("Profile photo must be 5 MB or smaller");
+      return;
+    }
+
+    setPhotoFile(file);
+    setRemovePhoto(false);
+  };
+
   const handleProfileSave = async () => {
     const phoneError = getPhoneError(phone);
     if (phoneError) {
       showErrorToast(phoneError);
       return;
     }
-    await updateProfile({ name: name.trim(), phone: phone.trim() });
+
+    const uploadedPhoto = photoFile ? await uploadUserPhoto(photoFile) : null;
+    if (photoFile && !uploadedPhoto) return;
+
+    const updated = await updateProfile({
+      name: name.trim(),
+      phone: phone.trim(),
+      profilePhoto:
+        uploadedPhoto ?? (removePhoto ? null : profile?.profilePhoto),
+    });
+
+    if (updated) {
+      setPhotoFile(null);
+      setRemovePhoto(false);
+    }
   };
 
   const handlePasswordChange = async () => {
@@ -140,6 +185,55 @@ export function SettingsView() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
               <Input value={profile?.email || ""} disabled />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Profile Photo</label>
+            <div className="flex flex-col gap-3 rounded-lg border border-border p-3 sm:flex-row sm:items-center">
+              <UserAvatar
+                user={{
+                  name: name || profile?.name,
+                  email: profile?.email,
+                  profilePhoto: removePhoto ? null : profile?.profilePhoto,
+                }}
+                size="lg"
+              />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={handlePhotoChange}
+                />
+                <p className="text-xs text-text-secondary">
+                  JPG, JPEG, PNG, or WEBP. Max 5 MB.
+                </p>
+                {photoFile && (
+                  <p className="truncate text-xs font-medium text-text-primary">
+                    Selected: {photoFile.name}
+                  </p>
+                )}
+              </div>
+              {profile?.profilePhoto && !removePhoto && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setPhotoFile(null);
+                    setRemovePhoto(true);
+                  }}
+                >
+                  Remove Photo
+                </Button>
+              )}
+              {removePhoto && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setRemovePhoto(false)}
+                >
+                  Undo Remove
+                </Button>
+              )}
             </div>
           </div>
           <div className="space-y-2 sm:max-w-xs">

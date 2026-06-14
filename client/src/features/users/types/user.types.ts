@@ -10,6 +10,7 @@ export interface User {
   _id: string;
   name: string;
   email: string;
+  profilePhoto?: string | null;
   role: UserRole;
   hospital?: UserHospital | string | null;
   verificationStatus: "PENDING" | "APPROVED" | "REJECTED";

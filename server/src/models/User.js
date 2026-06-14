@@ -63,6 +63,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    profilePhoto: {
+      type: String,
+      default: null,
+    },
+
     notificationPreferences: {
       referralAccepted: {
         type: Boolean,

@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import { FileQuestion } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { getDefaultRouteForRole } from "@/lib/navigation";
 import { ROUTES } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +13,11 @@ import {
 } from "@/components/ui/card";
 
 export function NotFoundPage() {
+  const { user } = useAuth();
+  const dashboardRoute = user
+    ? getDefaultRouteForRole(user.role)
+    : ROUTES.DASHBOARD;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md text-center">
@@ -25,7 +32,7 @@ export function NotFoundPage() {
         </CardHeader>
         <CardContent>
           <Button asChild>
-            <Link to={ROUTES.DASHBOARD}>Return to Dashboard</Link>
+            <Link to={dashboardRoute}>Return to Dashboard</Link>
           </Button>
         </CardContent>
       </Card>
