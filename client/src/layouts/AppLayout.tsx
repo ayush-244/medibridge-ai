@@ -8,7 +8,11 @@ import { SocketProvider } from "@/context/SocketContext";
 import { NotificationsProvider } from "@/features/notifications";
 import { useAuth } from "@/hooks/useAuth";
 import { useSocketEvent } from "@/hooks/useSocketEvent";
-import { SOCKET_EVENTS, type UserEventPayload } from "@/types/socket";
+import {
+  SOCKET_EVENTS,
+  type DoctorEventPayload,
+  type UserEventPayload,
+} from "@/types/socket";
 
 interface AppLayoutShellProps {
   collapsed: boolean;
@@ -59,6 +63,16 @@ function AuthProfileSync() {
   useSocketEvent(
     SOCKET_EVENTS.USER_UPDATED,
     (event: UserEventPayload) => {
+      if (event.userId === user?.id) {
+        void refreshProfile();
+      }
+    },
+    Boolean(user?.id),
+  );
+
+  useSocketEvent(
+    SOCKET_EVENTS.DOCTOR_UPDATED,
+    (event: DoctorEventPayload) => {
       if (event.userId === user?.id) {
         void refreshProfile();
       }

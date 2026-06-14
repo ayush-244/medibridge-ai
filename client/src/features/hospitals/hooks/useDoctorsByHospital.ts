@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { doctorService } from "@/features/doctors/services/doctor.service";
 import type { Doctor } from "@/features/doctors/types/doctor.types";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { SOCKET_EVENTS } from "@/types/socket";
 
 export function useDoctorsByHospital(hospitalId: string | null) {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -27,6 +30,16 @@ export function useDoctorsByHospital(hospitalId: string | null) {
       setIsLoading(false);
     }
   }, [hospitalId]);
+
+  const debouncedRefetch = useDebouncedCallback(() => {
+    void fetchDoctors();
+  }, 500);
+
+  useSocketEvent(
+    SOCKET_EVENTS.DOCTOR_UPDATED,
+    debouncedRefetch,
+    Boolean(hospitalId),
+  );
 
   useEffect(() => {
     void fetchDoctors();

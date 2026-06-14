@@ -77,6 +77,7 @@ export function useReferrals(): UseReferralsReturn {
   useSocketEvent(SOCKET_EVENTS.DOCTOR_ASSIGNED, debouncedRefetch);
   useSocketEvent(SOCKET_EVENTS.PATIENT_ARRIVED, debouncedRefetch);
   useSocketEvent(SOCKET_EVENTS.RESERVATION_CANCELLED, debouncedRefetch);
+  useSocketEvent(SOCKET_EVENTS.DOCTOR_UPDATED, debouncedRefetch);
   useSocketEvent(SOCKET_EVENTS.DASHBOARD_UPDATED, debouncedRefetch);
 
   useEffect(() => {

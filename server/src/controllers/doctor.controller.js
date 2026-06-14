@@ -1,5 +1,6 @@
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
+const User = require("../models/User");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
 const {
@@ -226,7 +227,14 @@ const updateDoctor = async (req, res) => {
     }
     if (experience !== undefined) doctor.experience = experience;
     if (status) doctor.status = status;
-    if (profilePhoto !== undefined) doctor.profilePhoto = profilePhoto || null;
+    if (profilePhoto !== undefined) {
+      doctor.profilePhoto = profilePhoto || null;
+      if (doctor.user) {
+        await User.findByIdAndUpdate(doctor.user, {
+          $set: { profilePhoto: null },
+        });
+      }
+    }
 
     if (hospital && req.user.role === "SUPER_ADMIN") {
       const oldHospitalId = doctor.hospital;
@@ -253,6 +261,7 @@ const updateDoctor = async (req, res) => {
     emitEvent("doctorUpdated", {
       doctorId: doctor._id,
       doctorName: doctor.name,
+      userId: doctor.user ? String(doctor.user) : undefined,
     });
 
     const populated = await Doctor.findById(doctor._id).populate(

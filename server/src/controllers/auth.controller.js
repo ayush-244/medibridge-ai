@@ -263,6 +263,27 @@ const getProfile = async (req, res) => {
       });
     }
 
+    let profilePhoto = user.profilePhoto;
+
+    if (user.role === "DOCTOR") {
+      const doctor = await Doctor.findOne({ user: user._id });
+      if (doctor) {
+        const legacyUserPhoto = user.profilePhoto;
+
+        if (!doctor.profilePhoto && legacyUserPhoto) {
+          doctor.profilePhoto = user.profilePhoto;
+          await doctor.save();
+        }
+
+        if (legacyUserPhoto) {
+          user.profilePhoto = null;
+          await user.save();
+        }
+
+        profilePhoto = doctor.profilePhoto;
+      }
+    }
+
     res.json({
       success: true,
       user: {
@@ -270,7 +291,7 @@ const getProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        profilePhoto: user.profilePhoto,
+        profilePhoto,
         role: user.role,
         hospital: user.hospital?._id || user.hospital,
         hospitalName: user.hospital?.name,
@@ -301,8 +322,23 @@ const updateProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (phone !== undefined) user.phone = phone;
-    if (profilePhoto !== undefined) {
+    let effectiveProfilePhoto = user.profilePhoto;
+    let doctorProfile = null;
+
+    if (user.role === "DOCTOR") {
+      doctorProfile = await Doctor.findOne({ user: user._id });
+    }
+
+    if (profilePhoto !== undefined && doctorProfile) {
+      doctorProfile.profilePhoto = profilePhoto || null;
+      await doctorProfile.save();
+      user.profilePhoto = null;
+      effectiveProfilePhoto = doctorProfile.profilePhoto;
+    } else if (profilePhoto !== undefined) {
       user.profilePhoto = profilePhoto || null;
+      effectiveProfilePhoto = user.profilePhoto;
+    } else if (doctorProfile) {
+      effectiveProfilePhoto = doctorProfile.profilePhoto;
     }
 
     await user.save();
@@ -313,6 +349,14 @@ const updateProfile = async (req, res) => {
       action: "profile_updated",
     });
 
+    if (doctorProfile && profilePhoto !== undefined) {
+      emitEvent("doctorUpdated", {
+        doctorId: doctorProfile._id,
+        doctorName: doctorProfile.name,
+        userId: String(user._id),
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",
@@ -321,7 +365,7 @@ const updateProfile = async (req, res) => {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        profilePhoto: user.profilePhoto,
+        profilePhoto: effectiveProfilePhoto,
         role: user.role,
         hospital: user.hospital,
         notificationPreferences: user.notificationPreferences,

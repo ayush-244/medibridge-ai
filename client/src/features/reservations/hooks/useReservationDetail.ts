@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import { reservationService } from "@/features/reservations/services/reservation.service";
 import type { Reservation } from "@/features/reservations/types/reservation.types";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
 import { showErrorToast } from "@/lib/toast";
+import { SOCKET_EVENTS } from "@/types/socket";
 
 interface UseReservationDetailReturn {
   reservation: Reservation | null;
@@ -34,6 +36,16 @@ export function useReservationDetail(): UseReservationDetailReturn {
   const clearReservation = useCallback(() => {
     setReservation(null);
   }, []);
+
+  useSocketEvent(
+    SOCKET_EVENTS.DOCTOR_UPDATED,
+    () => {
+      if (reservation?._id) {
+        void fetchReservation(reservation._id);
+      }
+    },
+    Boolean(reservation?._id),
+  );
 
   return { reservation, isLoading, fetchReservation, clearReservation };
 }

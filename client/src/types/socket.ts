@@ -60,6 +60,7 @@ export interface UserEventPayload {
 export interface DoctorEventPayload {
   doctorId: string;
   doctorName: string;
+  userId?: string;
 }
 
 export interface HospitalEventPayload {

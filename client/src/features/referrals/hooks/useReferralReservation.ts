@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { reservationService } from "@/features/reservations/services/reservation.service";
 import type { Reservation } from "@/features/reservations/types/reservation.types";
+import { useSocketEvent } from "@/hooks/useSocketEvent";
+import { SOCKET_EVENTS } from "@/types/socket";
 
 export function useReferralReservation(referralId: string | null, enabled: boolean) {
   const [reservation, setReservation] = useState<Reservation | null>(null);
@@ -33,6 +35,14 @@ export function useReferralReservation(referralId: string | null, enabled: boole
   useEffect(() => {
     void fetchReservation();
   }, [fetchReservation]);
+
+  useSocketEvent(
+    SOCKET_EVENTS.DOCTOR_UPDATED,
+    () => {
+      void fetchReservation();
+    },
+    enabled && Boolean(referralId),
+  );
 
   return { reservation, isLoading, refetch: fetchReservation };
 }
