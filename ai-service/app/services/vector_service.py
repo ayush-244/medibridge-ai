@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+from uuid import uuid4
 
 import chromadb
 
@@ -26,11 +27,23 @@ def _get_collection(settings: Settings) -> chromadb.Collection:
     return _collection
 
 
+def validate_chroma_connection(settings: Optional[Settings] = None) -> None:
+    config = settings or get_settings()
+    try:
+        collection = _get_collection(config)
+        collection.count()
+        logger.info("ChromaDB connection validated successfully")
+    except Exception as exc:
+        logger.error("ChromaDB validation failed: %s", exc)
+        raise VectorStoreError(f"ChromaDB is not accessible: {exc}") from exc
+
+
 def store_document_chunks(
     chunks: List[str],
     embeddings: List[List[float]],
     file_name: str,
     patient_id: Optional[str] = None,
+    uploaded_by: Optional[str] = None,
     settings: Optional[Settings] = None,
 ) -> int:
     if not chunks:
@@ -42,15 +55,19 @@ def store_document_chunks(
     config = settings or get_settings()
     upload_date = datetime.now(timezone.utc).isoformat()
     patient_value = patient_id or ""
+    uploaded_by_value = uploaded_by or ""
+    document_id = uuid4().hex
 
-    ids = [f"{file_name}_{index}" for index in range(len(chunks))]
+    ids = [f"{document_id}_{index}" for index in range(len(chunks))]
     metadatas: List[Dict[str, Any]] = [
         {
-            "file_name": file_name,
-            "upload_date": upload_date,
-            "patient_id": patient_value,
+            "patientId": patient_value,
+            "fileName": file_name,
+            "uploadDate": upload_date,
+            "uploadedBy": uploaded_by_value,
+            "chunkIndex": index,
         }
-        for _ in chunks
+        for index in range(len(chunks))
     ]
 
     try:
@@ -62,7 +79,7 @@ def store_document_chunks(
             metadatas=metadatas,
         )
         logger.info(
-            "Stored %d chunks for file=%s patient_id=%s",
+            "Stored %d chunks for file=%s patientId=%s",
             len(chunks),
             file_name,
             patient_value,

@@ -2,12 +2,12 @@ class MediBridgeError(Exception):
     """Base exception for MediBridge AI service errors."""
 
 
-class GeminiConfigurationError(MediBridgeError):
-    """Raised when the Gemini API key is missing or invalid."""
+class LLMConfigurationError(MediBridgeError):
+    """Raised when the LLM API key is missing or invalid."""
 
 
-class GeminiAPIError(MediBridgeError):
-    """Raised when a Gemini API call fails."""
+class LLMAPIError(MediBridgeError):
+    """Raised when an LLM API call fails."""
 
 
 class SummaryGenerationError(MediBridgeError):
@@ -20,3 +20,11 @@ class VectorStoreError(MediBridgeError):
 
 class EmbeddingError(MediBridgeError):
     """Raised when embedding generation fails."""
+
+
+class PDFParsingError(MediBridgeError):
+    """Raised when PDF text extraction fails."""
+
+
+class UploadValidationError(MediBridgeError):
+    """Raised when an uploaded file fails validation."""

@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 from app.core.exceptions import SummaryGenerationError
 from app.core.logger import logger
-from app.services.gemini_service import get_gemini_service
+from app.services.llm_service import get_llm_service
 
 
 def generate_medical_summary(text: str) -> Dict[str, Any]:
@@ -11,7 +11,7 @@ def generate_medical_summary(text: str) -> Dict[str, Any]:
 
     try:
         logger.info("Generating medical summary")
-        result = get_gemini_service().generate_summary(text)
+        result = get_llm_service().generate_summary(text)
         logger.info("Medical summary generated successfully")
         return result
     except SummaryGenerationError:
