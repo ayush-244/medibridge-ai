@@ -1,38 +1,21 @@
-import os
-from google import genai
-from dotenv import load_dotenv
+from typing import Any, Dict
 
-load_dotenv()
-
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
+from app.core.exceptions import SummaryGenerationError
+from app.core.logger import logger
+from app.services.gemini_service import get_gemini_service
 
 
-def generate_medical_summary(text: str):
+def generate_medical_summary(text: str) -> Dict[str, Any]:
+    if not text or not text.strip():
+        raise SummaryGenerationError("Report text is empty")
 
-    prompt = f"""
-    You are a medical assistant.
-
-    Analyze the following patient report.
-
-    Return:
-
-    1. Patient Summary
-    2. Diagnosis
-    3. Symptoms
-    4. Risk Factors
-    5. Current Medications
-    6. Follow-up Recommendations
-
-    Report:
-
-    {text}
-    """
-
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
-
-    return response.text
+    try:
+        logger.info("Generating medical summary")
+        result = get_gemini_service().generate_summary(text)
+        logger.info("Medical summary generated successfully")
+        return result
+    except SummaryGenerationError:
+        raise
+    except Exception as exc:
+        logger.error("Summary generation failed: %s", exc)
+        raise SummaryGenerationError("Failed to generate summary") from exc

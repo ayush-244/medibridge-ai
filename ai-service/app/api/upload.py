@@ -1,31 +1,56 @@
-from fastapi import APIRouter, UploadFile, File
-import os
+from fastapi import APIRouter, File, Form, UploadFile
 
+from app.core.config import get_settings
+from app.core.logger import logger
+from app.models.schemas import UploadResponse
+from app.services.chunk_service import chunk_text
+from app.services.embedding_service import generate_embeddings
 from app.services.pdf_service import extract_text_from_pdf
+from app.services.vector_service import store_document_chunks
 
 router = APIRouter()
 
-UPLOAD_DIR = "app/uploads"
 
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+@router.post("/upload", response_model=UploadResponse)
+async def upload_pdf(
+    file: UploadFile = File(...),
+    patient_id: str = Form(default=""),
+) -> UploadResponse:
+    settings = get_settings()
+    filename = file.filename or "upload.pdf"
+    file_path = settings.upload_dir / filename
 
-
-@router.post("/upload")
-async def upload_pdf(file: UploadFile = File(...)):
-
-    file_path = os.path.join(
-        UPLOAD_DIR,
-        file.filename
-    )
-
-    with open(file_path, "wb") as f:
+    try:
         content = await file.read()
-        f.write(content)
+        file_path.write_bytes(content)
 
-    extracted_text = extract_text_from_pdf(file_path)
+        logger.info("PDF uploaded: filename=%s patient_id=%s", filename, patient_id)
 
-    return {
-        "success": True,
-        "filename": file.filename,
-        "text": extracted_text[:3000]
-    }
+        extracted_text = extract_text_from_pdf(str(file_path))
+        chunks = chunk_text(extracted_text)
+        embeddings = generate_embeddings(chunks)
+        chunks_stored = store_document_chunks(
+            chunks=chunks,
+            embeddings=embeddings,
+            file_name=filename,
+            patient_id=patient_id or None,
+        )
+
+        logger.info(
+            "Upload pipeline complete: filename=%s chunks_stored=%d",
+            filename,
+            chunks_stored,
+        )
+
+        return UploadResponse(
+            success=True,
+            filename=filename,
+            chunks_stored=chunks_stored,
+            patient_id=patient_id or None,
+        )
+    except Exception as exc:
+        logger.error("Upload pipeline failed for %s: %s", filename, exc)
+        return UploadResponse(
+            success=False,
+            message="Failed to process uploaded PDF",
+        )
