@@ -15,6 +15,7 @@ import {
 import { ReferralDrawerSkeleton } from "@/features/referrals/components/ReferralDrawerSkeleton";
 import { ReferralTimeline } from "@/features/referrals/components/ReferralTimeline";
 import { ReferralRouteMap } from "@/features/maps/components/ReferralRouteMap";
+import { SpecialistRecommendationCard } from "@/features/ai-recommendations";
 import { useReferralReservation } from "@/features/referrals/hooks/useReferralReservation";
 import { getReferralPriority } from "@/features/referrals/utils/severity";
 import {
@@ -108,6 +109,11 @@ export function ReferralDetailDrawer({
               <DetailRow label="Requested By" value={requestedBy} />
             </div>
           </div>
+
+          <SpecialistRecommendationCard
+            patientId={referral._id}
+            enabled={open}
+          />
 
           <div>
             <h4 className="mb-2 text-sm font-semibold">Hospital Routing</h4>

@@ -88,3 +88,50 @@ def store_document_chunks(
     except Exception as exc:
         logger.error("ChromaDB storage failed for file=%s: %s", file_name, exc)
         raise VectorStoreError(f"Failed to store document chunks: {exc}") from exc
+
+
+def query_document_chunks(
+    query_embedding: List[float],
+    patient_id: str,
+    top_k: int = 5,
+    settings: Optional[Settings] = None,
+) -> List[Dict[str, Any]]:
+    config = settings or get_settings()
+
+    try:
+        collection = _get_collection(config)
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            where={"patientId": patient_id},
+            include=["documents", "metadatas", "distances"],
+        )
+    except Exception as exc:
+        logger.error(
+            "ChromaDB query failed for patientId=%s: %s",
+            patient_id,
+            exc,
+        )
+        raise VectorStoreError(f"Failed to query document chunks: {exc}") from exc
+
+    documents = results.get("documents") or [[]]
+    metadatas = results.get("metadatas") or [[]]
+    distances = results.get("distances") or [[]]
+
+    chunks: List[Dict[str, Any]] = []
+    for text, metadata, distance in zip(documents[0], metadatas[0], distances[0]):
+        chunks.append(
+            {
+                "text": text,
+                "metadata": metadata or {},
+                "distance": distance,
+            }
+        )
+
+    logger.info(
+        "ChromaDB query returned %d chunks for patientId=%s top_k=%d",
+        len(chunks),
+        patient_id,
+        top_k,
+    )
+    return chunks

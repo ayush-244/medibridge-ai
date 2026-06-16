@@ -28,3 +28,15 @@ class PDFParsingError(MediBridgeError):
 
 class UploadValidationError(MediBridgeError):
     """Raised when an uploaded file fails validation."""
+
+
+class ChatGenerationError(MediBridgeError):
+    """Raised when RAG chat response generation fails."""
+
+
+class NoDocumentsError(MediBridgeError):
+    """Raised when no medical documents exist for a patient."""
+
+
+class RecommendationGenerationError(MediBridgeError):
+    """Raised when specialist recommendation generation fails."""
