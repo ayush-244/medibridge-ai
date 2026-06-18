@@ -1,5 +1,70 @@
 const Hospital = require("../models/Hospital");
 const calculateDistance = require("../utils/distance");
+const Referral = require("../models/Referral");
+const Doctor = require("../models/Doctor");
+const BedReservation = require("../models/BedReservation");
+
+const getMatchingData = async (req, res) => {
+  try {
+    const hospitals = await Hospital.find();
+
+    const doctors = await Doctor.find();
+
+    const reservations =
+      await BedReservation.find({
+        reservationStatus: {
+          $in: [
+            "PENDING",
+            "CONFIRMED",
+            "ARRIVED",
+          ],
+        },
+      });
+
+    res.status(200).json({
+      success: true,
+      hospitals,
+      doctors,
+      reservations,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+const getReferralData = async (req, res) => {
+  try {
+    const referral = await Referral.findById(
+      req.params.referralId
+    )
+      .populate("fromHospital")
+      .populate("toHospital");
+
+    if (!referral) {
+      return res.status(404).json({
+        success: false,
+        message: "Referral not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: referral,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
 
 const triagePatient = async (req, res) => {
   try {
@@ -171,6 +236,8 @@ const emergencyRecommendation = async (req, res) => {
 };
 
 module.exports = {
+  getMatchingData,
+  getReferralData,
   triagePatient,
   emergencyRecommendation,
 };
