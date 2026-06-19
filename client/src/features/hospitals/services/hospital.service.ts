@@ -82,6 +82,18 @@ export const hospitalService = {
     return data.data;
   },
 
+  async getApproved(): Promise<Hospital[]> {
+    const { data } = await api.get<ApiResponse<Hospital[]>>(
+      "/hospitals/approved",
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to fetch approved hospitals");
+    }
+
+    return data.data;
+  },
+
   async uploadLogo(file: File): Promise<string> {
     const formData = new FormData();
     formData.append("logo", file);

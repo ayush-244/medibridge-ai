@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -5,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { TemporaryPasswordDialog } from "@/components/common/TemporaryPasswordDialog";
 import { DoctorForm } from "@/features/doctors/components/DoctorForm";
 import { useDoctorMutations } from "@/features/doctors/hooks/useDoctorMutations";
 import type { CreateDoctorPayload } from "@/features/doctors/types/doctor.types";
@@ -24,6 +26,9 @@ export function CreateDoctorDialog({
   const { user } = useAuth();
   const { isSubmitting, createDoctor, uploadDoctorPhoto } =
     useDoctorMutations();
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(
+    null,
+  );
 
   const defaultHospitalId =
     user?.role === "HOSPITAL_ADMIN" ? user.hospital : null;
@@ -38,35 +43,51 @@ export function CreateDoctorDialog({
 
     if (options.photoFile && !profilePhoto) return;
 
-    const doctor = await createDoctor({
+    const result = await createDoctor({
       ...payload,
       profilePhoto: profilePhoto ?? payload.profilePhoto,
     });
-    if (doctor) {
+
+    if (result) {
       onOpenChange(false);
       onSuccess?.();
+      if (result.temporaryPassword) {
+        setTemporaryPassword(result.temporaryPassword);
+      }
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Create Doctor</DialogTitle>
-          <DialogDescription>
-            Register a new physician in the hospital network.
-          </DialogDescription>
-        </DialogHeader>
-        <DoctorForm
-          key={`${open}-${defaultHospitalId ?? "all"}`}
-          defaultHospitalId={defaultHospitalId}
-          showHospitalSelect={user?.role === "SUPER_ADMIN"}
-          isSubmitting={isSubmitting}
-          submitLabel="Create Doctor"
-          onSubmit={(payload, options) => void handleSubmit(payload, options)}
-          onCancel={() => onOpenChange(false)}
-        />
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Create Doctor</DialogTitle>
+            <DialogDescription>
+              Register a new physician with a linked login account. A temporary
+              password will be generated automatically.
+            </DialogDescription>
+          </DialogHeader>
+          <DoctorForm
+            key={`${open}-${defaultHospitalId ?? "all"}`}
+            defaultHospitalId={defaultHospitalId}
+            showHospitalSelect={user?.role === "SUPER_ADMIN"}
+            isSubmitting={isSubmitting}
+            submitLabel="Create Doctor"
+            onSubmit={(payload, options) => void handleSubmit(payload, options)}
+            onCancel={() => onOpenChange(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <TemporaryPasswordDialog
+        open={Boolean(temporaryPassword)}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setTemporaryPassword(null);
+        }}
+        password={temporaryPassword || ""}
+        description="Share this password with the doctor. They must change it on first login."
+      />
+    </>
   );
 }

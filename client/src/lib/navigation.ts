@@ -166,6 +166,24 @@ export const navigationConfig: NavItem[] = [
         icon: Users,
         roles: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
       },
+      {
+        title: "Pending Hospitals",
+        href: ROUTES.PENDING_HOSPITALS,
+        icon: Building2,
+        roles: [ROLES.SUPER_ADMIN],
+      },
+      {
+        title: "Pending Hospital Admins",
+        href: ROUTES.PENDING_HOSPITAL_ADMINS,
+        icon: Building2,
+        roles: [ROLES.SUPER_ADMIN],
+      },
+      {
+        title: "Pending Doctors",
+        href: ROUTES.PENDING_DOCTORS,
+        icon: Stethoscope,
+        roles: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
+      },
     ],
   },
   {
@@ -261,6 +279,9 @@ export const routeRoles: Record<string, UserRole[]> = {
     ROLES.DOCTOR,
   ],
   [ROUTES.USERS]: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
+  [ROUTES.PENDING_HOSPITALS]: [ROLES.SUPER_ADMIN],
+  [ROUTES.PENDING_HOSPITAL_ADMINS]: [ROLES.SUPER_ADMIN],
+  [ROUTES.PENDING_DOCTORS]: [ROLES.SUPER_ADMIN, ROLES.HOSPITAL_ADMIN],
   [ROUTES.AUDIT_LOGS]: [ROLES.SUPER_ADMIN],
 };
 
@@ -279,6 +300,15 @@ export const breadcrumbLabels: Record<string, string> = {
   notifications: "Notifications",
   settings: "Settings",
   users: "Users",
+  "super-admin": "Super Admin",
+  "pending-hospitals": "Pending Hospitals",
+  "pending-hospital-admins": "Pending Hospital Admins",
+  "hospital-admin": "Hospital Admin",
+  "pending-doctors": "Pending Doctors",
+  "register-hospital": "Register Hospital",
+  "register-doctor": "Register Doctor",
+  "pending-approval": "Pending Approval",
+  "change-password": "Change Password",
   admin: "Admin",
   "audit-logs": "Audit Logs",
 };

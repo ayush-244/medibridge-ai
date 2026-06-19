@@ -78,6 +78,17 @@ const hospitalSchema = new mongoose.Schema(
       },
     },
 
+    verificationStatus: {
+      type: String,
+      enum: ["PENDING", "APPROVED", "REJECTED"],
+      default: "APPROVED",
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: true,
+    },
+
     doctors: [
       {
         type: mongoose.Schema.Types.ObjectId,

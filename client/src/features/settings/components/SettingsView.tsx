@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { UserAvatar } from "@/components/common/UserAvatar";
 import { useSettings } from "@/features/settings/hooks/useSettings";
 import type { NotificationPreferences } from "@/types/auth";
-import { getPhoneError } from "@/lib/validation";
+import { getPhoneError, getPasswordError, isValidPassword } from "@/lib/validation";
 import { showErrorToast } from "@/lib/toast";
 
 function ToggleRow({
@@ -129,8 +129,15 @@ export function SettingsView() {
   };
 
   const handlePasswordChange = async () => {
-    if (newPassword.length < 6) return;
-    if (newPassword !== confirmPassword) return;
+    const passwordError = getPasswordError(newPassword);
+    if (passwordError) {
+      showErrorToast(passwordError);
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showErrorToast("Passwords do not match");
+      return;
+    }
     const success = await changePassword({ currentPassword, newPassword });
     if (success) {
       setCurrentPassword("");
@@ -267,7 +274,7 @@ export function SettingsView() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                minLength={6}
+                minLength={8}
               />
             </div>
             <div className="space-y-2">
@@ -284,7 +291,7 @@ export function SettingsView() {
             disabled={
               isSaving ||
               !currentPassword ||
-              newPassword.length < 6 ||
+              !isValidPassword(newPassword) ||
               newPassword !== confirmPassword
             }
           >

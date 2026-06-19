@@ -4,13 +4,12 @@ import type {
   AuthUser,
   ChangePasswordPayload,
   LoginCredentials,
+  LoginResult,
   NotificationPreferences,
+  RegisterDoctorPayload,
+  RegisterHospitalPayload,
   UpdateProfilePayload,
 } from "@/types/auth";
-
-interface LoginResponse {
-  token: string;
-}
 
 interface ProfileResponse {
   user: AuthUser;
@@ -23,8 +22,8 @@ interface UploadUserPhotoResponse {
 }
 
 export const authService = {
-  async login(credentials: LoginCredentials): Promise<string> {
-    const { data } = await api.post<ApiResponse & LoginResponse>(
+  async login(credentials: LoginCredentials): Promise<LoginResult> {
+    const { data } = await api.post<ApiResponse & LoginResult>(
       "/auth/login",
       credentials,
     );
@@ -33,7 +32,33 @@ export const authService = {
       throw new Error(data.message || "Login failed");
     }
 
-    return data.token;
+    return {
+      token: data.token,
+      user: data.user as AuthUser,
+      mustChangePassword: Boolean(data.mustChangePassword),
+    };
+  },
+
+  async registerHospital(payload: RegisterHospitalPayload): Promise<void> {
+    const { data } = await api.post<ApiResponse>(
+      "/auth/register-hospital",
+      payload,
+    );
+
+    if (!data.success) {
+      throw new Error(data.message || "Hospital registration failed");
+    }
+  },
+
+  async registerDoctor(payload: RegisterDoctorPayload): Promise<void> {
+    const { data } = await api.post<ApiResponse>(
+      "/auth/register-doctor",
+      payload,
+    );
+
+    if (!data.success) {
+      throw new Error(data.message || "Doctor registration failed");
+    }
   },
 
   async getProfile(): Promise<AuthUser> {
@@ -82,12 +107,18 @@ export const authService = {
     return data.url;
   },
 
-  async changePassword(payload: ChangePasswordPayload): Promise<void> {
+  async changePassword(
+    payload: ChangePasswordPayload,
+  ): Promise<{ mustChangePassword: boolean }> {
     const { data } = await api.patch<ApiResponse>("/auth/password", payload);
 
     if (!data.success) {
       throw new Error(data.message || "Failed to change password");
     }
+
+    return {
+      mustChangePassword: Boolean(data.mustChangePassword),
+    };
   },
 
   async updateNotificationPreferences(

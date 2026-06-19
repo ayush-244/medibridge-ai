@@ -51,6 +51,12 @@ api.interceptors.response.use(
     return Promise.reject({
       status,
       message,
+      pendingApproval: Boolean(
+        (error.response?.data as { pendingApproval?: boolean })?.pendingApproval,
+      ),
+      verificationStatus: (
+        error.response?.data as { verificationStatus?: string }
+      )?.verificationStatus,
       original: error,
     });
   },

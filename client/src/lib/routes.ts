@@ -1,6 +1,13 @@
 export const ROUTES = {
   LOGIN: "/login",
   UNAUTHORIZED: "/unauthorized",
+  REGISTER_HOSPITAL: "/register-hospital",
+  REGISTER_DOCTOR: "/register-doctor",
+  PENDING_APPROVAL: "/pending-approval",
+  CHANGE_PASSWORD: "/change-password",
+  PENDING_HOSPITALS: "/super-admin/pending-hospitals",
+  PENDING_HOSPITAL_ADMINS: "/super-admin/pending-hospital-admins",
+  PENDING_DOCTORS: "/hospital-admin/pending-doctors",
   DASHBOARD: "/dashboard",
   DOCTOR_DASHBOARD: "/doctor-dashboard",
   REFERRALS: "/referrals",

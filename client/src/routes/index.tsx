@@ -3,14 +3,20 @@ import { routeRoles } from "@/lib/navigation";
 import { ROUTES } from "@/lib/routes";
 import { AuthProvider } from "@/context/AuthContext";
 import { ProtectedRoute } from "@/routes/ProtectedRoute";
+import { MustChangePasswordGate } from "@/routes/MustChangePasswordGate";
 import { RoleRoute } from "@/routes/RoleRoute";
 import { AppLayout } from "@/layouts/AppLayout";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { LoginPage } from "@/pages/auth/LoginPage";
+import { RegisterHospitalPage } from "@/pages/auth/RegisterHospitalPage";
+import { RegisterDoctorPage } from "@/pages/auth/RegisterDoctorPage";
+import { PendingApprovalPage } from "@/pages/auth/PendingApprovalPage";
+import { ChangePasswordPage } from "@/pages/auth/ChangePasswordPage";
 import { UnauthorizedPage } from "@/pages/auth/UnauthorizedPage";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { HospitalsPage } from "@/pages/hospitals/HospitalsPage";
 import { DoctorsPage } from "@/pages/doctors/DoctorsPage";
+import { PendingDoctorsPage } from "@/pages/doctors/PendingDoctorsPage";
 import { ReferralsPage } from "@/pages/referrals/ReferralsPage";
 import { ReservationsPage } from "@/pages/reservations/ReservationsPage";
 import { ReportsPage } from "@/pages/reports/ReportsPage";
@@ -18,6 +24,8 @@ import { NotificationsPage } from "@/pages/notifications/NotificationsPage";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { UsersPage } from "@/pages/users/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
+import { PendingHospitalsPage } from "@/pages/admin/PendingHospitalsPage";
+import { PendingHospitalAdminsPage } from "@/pages/admin/PendingHospitalAdminsPage";
 import { DoctorDashboardPage } from "@/pages/dashboard/DoctorDashboardPage";
 import { MapsPage } from "@/pages/maps/MapsPage";
 import { AIRecommendationsPage } from "@/pages/AIRecommendationsPage";
@@ -30,126 +38,177 @@ export function AppRoutes() {
       <Routes>
         <Route element={<AuthLayout />}>
           <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+          <Route
+            path={ROUTES.REGISTER_HOSPITAL}
+            element={<RegisterHospitalPage />}
+          />
+          <Route
+            path={ROUTES.REGISTER_DOCTOR}
+            element={<RegisterDoctorPage />}
+          />
+          <Route
+            path={ROUTES.PENDING_APPROVAL}
+            element={<PendingApprovalPage />}
+          />
         </Route>
 
         <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route element={<AppLayout />}>
-            <Route index element={<HomeRedirect />} />
-
+          <Route element={<AuthLayout />}>
             <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.DASHBOARD]} />
-              }
-            >
-              <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
-            </Route>
+              path={ROUTES.CHANGE_PASSWORD}
+              element={<ChangePasswordPage />}
+            />
+          </Route>
 
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.DOCTOR_DASHBOARD]} />
-              }
-            >
+          <Route element={<MustChangePasswordGate />}>
+            <Route element={<AppLayout />}>
+              <Route index element={<HomeRedirect />} />
+
               <Route
-                path={ROUTES.DOCTOR_DASHBOARD}
-                element={<DoctorDashboardPage />}
-              />
-            </Route>
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.DASHBOARD]} />
+                }
+              >
+                <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+              </Route>
 
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.REFERRALS]} />
-              }
-            >
-              <Route path={ROUTES.REFERRALS} element={<ReferralsPage />} />
               <Route
-                path={ROUTES.REFERRALS_INBOUND}
-                element={<ReferralsPage />}
-              />
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.DOCTOR_DASHBOARD]} />
+                }
+              >
+                <Route
+                  path={ROUTES.DOCTOR_DASHBOARD}
+                  element={<DoctorDashboardPage />}
+                />
+              </Route>
+
               <Route
-                path={ROUTES.REFERRALS_OUTBOUND}
-                element={<ReferralsPage />}
-              />
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.REFERRALS]} />
+                }
+              >
+                <Route path={ROUTES.REFERRALS} element={<ReferralsPage />} />
+                <Route
+                  path={ROUTES.REFERRALS_INBOUND}
+                  element={<ReferralsPage />}
+                />
+                <Route
+                  path={ROUTES.REFERRALS_OUTBOUND}
+                  element={<ReferralsPage />}
+                />
+                <Route
+                  path={ROUTES.AI_RECOMMENDATIONS}
+                  element={<AIRecommendationsPage />}
+                />
+              </Route>
+
               <Route
-                path={ROUTES.AI_RECOMMENDATIONS}
-                element={<AIRecommendationsPage />}
-              />
-            </Route>
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.HOSPITALS]} />
+                }
+              >
+                <Route path={ROUTES.HOSPITALS} element={<HospitalsPage />} />
+              </Route>
 
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.HOSPITALS]} />
-              }
-            >
-              <Route path={ROUTES.HOSPITALS} element={<HospitalsPage />} />
-            </Route>
-
-            <Route
-              element={<RoleRoute allowedRoles={routeRoles[ROUTES.MAPS]} />}
-            >
-              <Route path={ROUTES.MAPS} element={<MapsPage />} />
-            </Route>
-
-            <Route
-              element={<RoleRoute allowedRoles={routeRoles[ROUTES.DOCTORS]} />}
-            >
-              <Route path={ROUTES.DOCTORS} element={<DoctorsPage />} />
-            </Route>
-
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.RESERVATIONS]} />
-              }
-            >
               <Route
-                path={ROUTES.RESERVATIONS}
-                element={<ReservationsPage />}
-              />
-            </Route>
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.PENDING_HOSPITALS]} />
+                }
+              >
+                <Route
+                  path={ROUTES.PENDING_HOSPITALS}
+                  element={<PendingHospitalsPage />}
+                />
+              </Route>
 
-            <Route
-              element={<RoleRoute allowedRoles={routeRoles[ROUTES.REPORTS]} />}
-            >
-              <Route path={ROUTES.REPORTS} element={<ReportsPage />} />
-            </Route>
-
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.NOTIFICATIONS]} />
-              }
-            >
               <Route
-                path={ROUTES.NOTIFICATIONS}
-                element={<NotificationsPage />}
-              />
-            </Route>
+                element={
+                  <RoleRoute
+                    allowedRoles={routeRoles[ROUTES.PENDING_HOSPITAL_ADMINS]}
+                  />
+                }
+              >
+                <Route
+                  path={ROUTES.PENDING_HOSPITAL_ADMINS}
+                  element={<PendingHospitalAdminsPage />}
+                />
+              </Route>
 
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.SETTINGS]} />
-              }
-            >
-              <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
-            </Route>
-
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.USERS]} />
-              }
-            >
-              <Route path={ROUTES.USERS} element={<UsersPage />} />
-            </Route>
-
-            <Route
-              element={
-                <RoleRoute allowedRoles={routeRoles[ROUTES.AUDIT_LOGS]} />
-              }
-            >
               <Route
-                path={ROUTES.AUDIT_LOGS}
-                element={<AuditLogsPage />}
-              />
+                element={<RoleRoute allowedRoles={routeRoles[ROUTES.MAPS]} />}
+              >
+                <Route path={ROUTES.MAPS} element={<MapsPage />} />
+              </Route>
+
+              <Route
+                element={<RoleRoute allowedRoles={routeRoles[ROUTES.DOCTORS]} />}
+              >
+                <Route path={ROUTES.DOCTORS} element={<DoctorsPage />} />
+              </Route>
+
+              <Route
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.PENDING_DOCTORS]} />
+                }
+              >
+                <Route
+                  path={ROUTES.PENDING_DOCTORS}
+                  element={<PendingDoctorsPage />}
+                />
+              </Route>
+
+              <Route
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.RESERVATIONS]} />
+                }
+              >
+                <Route
+                  path={ROUTES.RESERVATIONS}
+                  element={<ReservationsPage />}
+                />
+              </Route>
+
+              <Route
+                element={<RoleRoute allowedRoles={routeRoles[ROUTES.REPORTS]} />}
+              >
+                <Route path={ROUTES.REPORTS} element={<ReportsPage />} />
+              </Route>
+
+              <Route
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.NOTIFICATIONS]} />
+                }
+              >
+                <Route
+                  path={ROUTES.NOTIFICATIONS}
+                  element={<NotificationsPage />}
+                />
+              </Route>
+
+              <Route
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.SETTINGS]} />
+                }
+              >
+                <Route path={ROUTES.SETTINGS} element={<SettingsPage />} />
+              </Route>
+
+              <Route
+                element={<RoleRoute allowedRoles={routeRoles[ROUTES.USERS]} />}
+              >
+                <Route path={ROUTES.USERS} element={<UsersPage />} />
+              </Route>
+
+              <Route
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.AUDIT_LOGS]} />
+                }
+              >
+                <Route path={ROUTES.AUDIT_LOGS} element={<AuditLogsPage />} />
+              </Route>
             </Route>
           </Route>
         </Route>

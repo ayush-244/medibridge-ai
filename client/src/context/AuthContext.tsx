@@ -16,9 +16,14 @@ interface AuthContextValue {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<AuthUser>;
+  mustChangePassword: boolean;
+  login: (credentials: LoginCredentials) => Promise<{
+    user: AuthUser;
+    mustChangePassword: boolean;
+  }>;
   logout: () => void;
   refreshProfile: () => Promise<AuthUser | null>;
+  clearMustChangePassword: () => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -45,6 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const mustChangePassword = Boolean(user?.mustChangePassword);
+
   const logout = useCallback(() => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
     setUser(null);
@@ -61,21 +68,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return profile;
   }, [token]);
 
+  const clearMustChangePassword = useCallback(() => {
+    setUser((current) => {
+      if (!current) return current;
+      const updated = { ...current, mustChangePassword: false };
+      if (token) {
+        persistAuth(token, updated);
+      }
+      return updated;
+    });
+  }, [token]);
+
   const login = useCallback(async (credentials: LoginCredentials) => {
-    const newToken = await authService.login(credentials);
-  
-    setToken(newToken);
-  
-    localStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ token: newToken })
-    );
-  
-    const profile = await authService.getProfile();
-  
-    persistAuth(newToken, profile);
-    setUser(profile);
-    return profile;
+    const result = await authService.login(credentials);
+
+    setToken(result.token);
+
+    let profile = result.user;
+    if (!profile?.id) {
+      localStorage.setItem(
+        AUTH_STORAGE_KEY,
+        JSON.stringify({ token: result.token }),
+      );
+      profile = await authService.getProfile();
+    }
+
+    const mergedProfile: AuthUser = {
+      ...profile,
+      mustChangePassword: result.mustChangePassword,
+    };
+
+    persistAuth(result.token, mergedProfile);
+    setUser(mergedProfile);
+
+    return {
+      user: mergedProfile,
+      mustChangePassword: result.mustChangePassword,
+    };
   }, []);
 
   useEffect(() => {
@@ -109,11 +138,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       token,
       isAuthenticated: Boolean(token && user),
       isLoading,
+      mustChangePassword,
       login,
       logout,
       refreshProfile,
+      clearMustChangePassword,
     }),
-    [user, token, isLoading, login, logout, refreshProfile],
+    [
+      user,
+      token,
+      isLoading,
+      mustChangePassword,
+      login,
+      logout,
+      refreshProfile,
+      clearMustChangePassword,
+    ],
   );
 
   return (

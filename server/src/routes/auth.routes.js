@@ -2,6 +2,8 @@ const express = require("express");
 
 const {
   registerUser,
+  registerHospital,
+  registerDoctor,
   loginUser,
   getProfile,
   updateProfile,
@@ -15,6 +17,8 @@ const authorizeRoles = require("../middleware/authorize.middleware");
 const router = express.Router();
 
 router.post("/register", authenticateUser, registerUser);
+router.post("/register-hospital", registerHospital);
+router.post("/register-doctor", registerDoctor);
 router.post("/login", loginUser);
 
 router.get("/profile", authenticateUser, getProfile);

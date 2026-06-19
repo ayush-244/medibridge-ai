@@ -25,7 +25,6 @@ interface CreateUserFormProps {
 const initialValues: CreateUserFormValues = {
   name: "",
   email: "",
-  password: "",
   role: "",
   hospital: "",
   specialization: "",
@@ -84,22 +83,7 @@ export function CreateUserForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">
-            Password
-          </label>
-          <Input
-            type="password"
-            value={values.password}
-            onChange={(e) =>
-              setValues({ ...values, password: e.target.value })
-            }
-            placeholder="Min. 6 characters"
-            required
-            minLength={6}
-          />
-        </div>
-        <div className="space-y-2">
+        <div className="space-y-2 sm:col-span-2">
           <label className="text-sm font-medium text-text-primary">Role</label>
           <Select
             value={values.role}
@@ -115,6 +99,10 @@ export function CreateUserForm({
               </option>
             ))}
           </Select>
+          <p className="text-xs text-text-secondary">
+            A temporary password (MediBridge@123) will be generated automatically.
+            The user must change it on first login.
+          </p>
         </div>
       </div>
 

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { getDefaultRouteForRole } from "@/lib/navigation";
+import { ROUTES } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,9 +22,11 @@ export function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const authenticatedTarget = user
-    ? getDefaultRouteForRole(user.role)
-    : "/";
+  const authenticatedTarget = user?.mustChangePassword
+    ? ROUTES.CHANGE_PASSWORD
+    : user
+      ? getDefaultRouteForRole(user.role)
+      : "/";
 
   if (isLoading) {
     return (
@@ -43,14 +46,26 @@ export function LoginPage() {
     setSubmitting(true);
 
     try {
-      const profile = await login({ email, password });
-      navigate(getDefaultRouteForRole(profile.role), { replace: true });
+      const result = await login({ email, password });
+
+      if (result.mustChangePassword) {
+        navigate(ROUTES.CHANGE_PASSWORD, { replace: true });
+        return;
+      }
+
+      navigate(getDefaultRouteForRole(result.user.role), { replace: true });
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : (err as { message?: string })?.message || "Login failed";
-      setError(message);
+      const apiError = err as {
+        message?: string;
+        pendingApproval?: boolean;
+      };
+
+      if (apiError.pendingApproval) {
+        navigate(ROUTES.PENDING_APPROVAL, { replace: true });
+        return;
+      }
+
+      setError(apiError.message || "Login failed");
     } finally {
       setSubmitting(false);
     }
@@ -112,6 +127,24 @@ export function LoginPage() {
               "Sign in"
             )}
           </Button>
+
+          <div className="space-y-2 pt-2 text-center text-sm text-text-secondary">
+            <p>
+              <Link
+                to={ROUTES.REGISTER_HOSPITAL}
+                className="text-primary hover:underline"
+              >
+                Register a hospital
+              </Link>
+              {" · "}
+              <Link
+                to={ROUTES.REGISTER_DOCTOR}
+                className="text-primary hover:underline"
+              >
+                Register as a doctor
+              </Link>
+            </p>
+          </div>
         </form>
       </CardContent>
     </Card>

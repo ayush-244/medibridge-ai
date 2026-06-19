@@ -17,7 +17,7 @@ const defaultPreferences: NotificationPreferences = {
 };
 
 export function useSettings() {
-  const { refreshProfile } = useAuth();
+  const { refreshProfile, clearMustChangePassword } = useAuth();
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -80,6 +80,8 @@ export function useSettings() {
     setIsSaving(true);
     try {
       await authService.changePassword(payload);
+      clearMustChangePassword();
+      await refreshProfile();
       showSuccessToast("Password changed successfully");
       return true;
     } catch (err) {
@@ -90,7 +92,7 @@ export function useSettings() {
     } finally {
       setIsSaving(false);
     }
-  }, []);
+  }, [clearMustChangePassword, refreshProfile]);
 
   const updatePreferences = useCallback(
     async (prefs: Partial<NotificationPreferences>) => {

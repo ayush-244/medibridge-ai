@@ -57,3 +57,19 @@ export interface DoctorFilters {
   status: DoctorStatus | "ALL";
   specialization: string;
 }
+
+export interface PendingDoctorUser {
+  _id: string;
+  name: string;
+  email: string;
+  hospital: DoctorHospital | string;
+  doctorProfile?: Pick<
+    Doctor,
+    "_id" | "specialization" | "experience" | "phone"
+  >;
+}
+
+export interface CreateDoctorResult {
+  doctor: Doctor;
+  temporaryPassword?: string;
+}

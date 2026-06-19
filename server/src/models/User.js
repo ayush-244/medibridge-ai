@@ -58,6 +58,11 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
+
     phone: {
       type: String,
       trim: true,

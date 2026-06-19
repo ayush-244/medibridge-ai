@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { doctorService } from "@/features/doctors/services/doctor.service";
 import type {
   CreateDoctorPayload,
+  CreateDoctorResult,
   Doctor,
   UpdateDoctorPayload,
 } from "@/features/doctors/types/doctor.types";
@@ -13,9 +14,9 @@ export function useDoctorMutations() {
   const createDoctor = useCallback(async (payload: CreateDoctorPayload) => {
     setIsSubmitting(true);
     try {
-      const doctor = await doctorService.create(payload);
-      showSuccessToast(`Doctor ${doctor.name} created`);
-      return doctor;
+      const result = await doctorService.create(payload);
+      showSuccessToast(`Doctor ${result.doctor.name} created`);
+      return result;
     } catch (err) {
       showErrorToast(
         (err as { message?: string })?.message || "Failed to create doctor",
@@ -75,3 +76,5 @@ export function useDoctorMutations() {
     toggleAvailability,
   };
 }
+
+export type { CreateDoctorResult };

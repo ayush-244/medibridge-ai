@@ -2,6 +2,7 @@ import api from "@/services/api";
 import type { ApiResponse } from "@/types/api";
 import type {
   CreateUserPayload,
+  CreateUserResult,
   User,
   UserDetail,
 } from "@/features/users/types/user.types";
@@ -27,7 +28,7 @@ export const userService = {
     return data.data;
   },
 
-  async create(payload: CreateUserPayload): Promise<User> {
+  async create(payload: CreateUserPayload): Promise<CreateUserResult> {
     const { data } = await api.post<ApiResponse<User>>(
       "/auth/register",
       payload,
@@ -37,7 +38,10 @@ export const userService = {
       throw new Error(data.message || "Failed to create user");
     }
 
-    return data.data;
+    return {
+      user: data.data,
+      temporaryPassword: data.temporaryPassword,
+    };
   },
 
   async deactivate(id: string): Promise<User> {

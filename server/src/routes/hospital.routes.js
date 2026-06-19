@@ -5,6 +5,7 @@ const {
   getAllHospitals,
   getHospitalById,
   getNearbyHospitals,
+  getApprovedHospitals,
   updateBeds,
   updateHospital,
 } = require("../controllers/hospital.controller");
@@ -13,6 +14,9 @@ const authenticateUser = require("../middleware/auth.middleware");
 const authorizeRoles = require("../middleware/authorize.middleware");
 
 const router = express.Router();
+
+// Public: approved hospitals for doctor self-registration
+router.get("/approved", getApprovedHospitals);
 
 // Create Hospital
 router.post(

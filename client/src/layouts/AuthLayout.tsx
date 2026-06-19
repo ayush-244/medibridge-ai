@@ -28,7 +28,7 @@ export function AuthLayout() {
       </div>
 
       <div className="flex flex-1 items-center justify-center bg-background p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-4xl">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-white">
               <Activity className="h-5 w-5" />

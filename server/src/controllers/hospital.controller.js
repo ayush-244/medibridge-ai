@@ -468,11 +468,37 @@ const getNearbyHospitals = async (req, res) => {
   }
 };
 
+const getApprovedHospitals = async (req, res) => {
+  try {
+    const hospitals = await Hospital.find({
+      $or: [
+        { verificationStatus: "APPROVED" },
+        { verificationStatus: { $exists: false } },
+      ],
+      isVerified: { $ne: false },
+    }).select("name city state address location");
+
+    res.status(200).json({
+      success: true,
+      count: hospitals.length,
+      data: hospitals,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   createHospital,
   getAllHospitals,
   getHospitalById,
   getNearbyHospitals,
+  getApprovedHospitals,
   updateBeds,
   updateHospital,
 };

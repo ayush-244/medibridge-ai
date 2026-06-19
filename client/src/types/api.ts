@@ -5,6 +5,10 @@ export interface ApiResponse<T = unknown> {
   count?: number;
   token?: string;
   user?: unknown;
+  mustChangePassword?: boolean;
+  temporaryPassword?: string;
+  pendingApproval?: boolean;
+  verificationStatus?: string;
 }
 
 export interface ApiError {

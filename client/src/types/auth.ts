@@ -16,6 +16,9 @@ export interface AuthUser {
   email?: string;
   phone?: string;
   profilePhoto?: string | null;
+  verificationStatus?: "PENDING" | "APPROVED" | "REJECTED";
+  isVerified?: boolean;
+  mustChangePassword?: boolean;
   notificationPreferences?: NotificationPreferences;
 }
 
@@ -40,6 +43,27 @@ export interface UpdateProfilePayload {
   name?: string;
   phone?: string;
   profilePhoto?: string | null;
+}
+
+export interface LoginResult {
+  token: string;
+  user: AuthUser;
+  mustChangePassword: boolean;
+}
+
+export interface RegisterHospitalPayload {
+  hospitalName: string;
+  address: string;
+  city: string;
+  state: string;
+  phone: string;
+  adminName: string;
+  adminEmail: string;
+  password: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export interface ChangePasswordPayload {

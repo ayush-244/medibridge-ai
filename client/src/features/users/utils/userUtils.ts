@@ -62,7 +62,6 @@ export function isValidEmail(email: string): boolean {
 export function validateCreateUserForm(values: {
   name: string;
   email: string;
-  password: string;
   role: string;
   hospital: string;
   specialization: string;
@@ -70,10 +69,6 @@ export function validateCreateUserForm(values: {
   if (!values.name.trim()) return "Name is required";
   const emailError = getEmailError(values.email, true);
   if (emailError) return emailError;
-  if (!values.password) return "Password is required";
-  if (values.password.length < 6) {
-    return "Password must be at least 6 characters";
-  }
   if (!values.role) return "Role is required";
 
   if (

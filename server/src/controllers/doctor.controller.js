@@ -1,13 +1,16 @@
 const Doctor = require("../models/Doctor");
 const Hospital = require("../models/Hospital");
 const User = require("../models/User");
+const bcrypt = require("bcryptjs");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
+const createNotification = require("../services/notification.service");
 const {
   isValidEmail,
   isValidPhone,
   isValidSpecialization,
 } = require("../utils/validators");
+const { TEMP_PASSWORD } = require("../utils/password");
 
 const createDoctor = async (req, res) => {
   try {
@@ -15,7 +18,22 @@ const createDoctor = async (req, res) => {
       req.body.hospital = req.user.hospital;
     }
 
-    const { email, specialization, phone } = req.body;
+    const { name, email, specialization, experience, phone, hospital } =
+      req.body;
+
+    if (!name?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor name is required",
+      });
+    }
+
+    if (!email?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor email is required",
+      });
+    }
 
     if (!specialization || !isValidSpecialization(specialization)) {
       return res.status(400).json({
@@ -24,24 +42,38 @@ const createDoctor = async (req, res) => {
       });
     }
 
-    if (email) {
-      if (!isValidEmail(email)) {
-        return res.status(400).json({
-          success: false,
-          message: "Enter a valid doctor email address",
-        });
-      }
-
-      const existingDoctor = await Doctor.findOne({
-        email: email.trim().toLowerCase(),
+    if (!hospital) {
+      return res.status(400).json({
+        success: false,
+        message: "Hospital is required",
       });
+    }
 
-      if (existingDoctor) {
-        return res.status(400).json({
-          success: false,
-          message: "A doctor with this email already exists",
-        });
-      }
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Enter a valid doctor email address",
+      });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "A user with this email already exists",
+      });
+    }
+
+    const existingDoctor = await Doctor.findOne({ email: normalizedEmail });
+
+    if (existingDoctor) {
+      return res.status(400).json({
+        success: false,
+        message: "A doctor with this email already exists",
+      });
     }
 
     if (phone && !isValidPhone(phone)) {
@@ -51,9 +83,32 @@ const createDoctor = async (req, res) => {
       });
     }
 
-    const doctor = await Doctor.create(req.body);
+    const hashedPassword = await bcrypt.hash(TEMP_PASSWORD, 10);
 
-    await Hospital.findByIdAndUpdate(doctor.hospital, {
+    const user = await User.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      password: hashedPassword,
+      role: "DOCTOR",
+      hospital,
+      phone: phone?.trim() || undefined,
+      verificationStatus: "APPROVED",
+      isVerified: true,
+      isActive: true,
+      mustChangePassword: true,
+    });
+
+    const doctor = await Doctor.create({
+      name: name.trim(),
+      email: normalizedEmail,
+      specialization,
+      experience: experience || 0,
+      hospital,
+      user: user._id,
+      phone: phone?.trim() || undefined,
+    });
+
+    await Hospital.findByIdAndUpdate(hospital, {
       $push: { doctors: doctor._id },
     });
 
@@ -61,7 +116,7 @@ const createDoctor = async (req, res) => {
       action: "DOCTOR_CREATED",
       entityType: "Doctor",
       entityId: doctor._id,
-      description: `Doctor ${doctor.name} created`,
+      description: `Doctor ${doctor.name} created with user account`,
       performedBy: req.user?.id || "SYSTEM",
     });
 
@@ -72,7 +127,9 @@ const createDoctor = async (req, res) => {
 
     res.status(201).json({
       success: true,
+      message: "Doctor created successfully",
       data: doctor,
+      temporaryPassword: TEMP_PASSWORD,
     });
   } catch (error) {
     console.error(error);
@@ -143,6 +200,197 @@ const getDoctorsByHospital = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch doctors",
+    });
+  }
+};
+
+const getPendingDoctors = async (req, res) => {
+  try {
+    const query = {
+      role: "DOCTOR",
+      verificationStatus: "PENDING",
+    };
+
+    if (req.user.role === "HOSPITAL_ADMIN") {
+      query.hospital = req.user.hospital;
+    } else if (req.user.role !== "SUPER_ADMIN") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    const users = await User.find(query)
+      .select("-password")
+      .populate("hospital", "name city")
+      .sort({ createdAt: -1 });
+
+    const enriched = await Promise.all(
+      users.map(async (user) => {
+        const doctor = await Doctor.findOne({ user: user._id });
+        return {
+          ...user.toObject(),
+          doctorProfile: doctor,
+        };
+      }),
+    );
+
+    res.status(200).json({
+      success: true,
+      count: enriched.length,
+      data: enriched,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch pending doctors",
+    });
+  }
+};
+
+const approveDoctor = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+
+    if (!user || user.role !== "DOCTOR") {
+      return res.status(404).json({
+        success: false,
+        message: "Pending doctor not found",
+      });
+    }
+
+    if (user.verificationStatus !== "PENDING") {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor is not pending approval",
+      });
+    }
+
+    if (
+      req.user.role === "HOSPITAL_ADMIN" &&
+      String(user.hospital) !== String(req.user.hospital)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    user.verificationStatus = "APPROVED";
+    user.isVerified = true;
+    await user.save();
+
+    const doctor = await Doctor.findOne({ user: user._id });
+
+    await logActivity({
+      action: "DOCTOR_APPROVED",
+      entityType: "Doctor",
+      entityId: doctor?._id || user._id,
+      description: `Doctor ${user.name} approved`,
+      performedBy: req.user.id,
+    });
+
+    await createNotification({
+      title: "Doctor Approved",
+      message: `Dr. ${user.name} has been approved and can now sign in.`,
+      type: "SUCCESS",
+    });
+
+    emitEvent("doctorApproved", {
+      userId: user._id,
+      doctorId: doctor?._id,
+      doctorName: user.name,
+    });
+
+    emitEvent("dashboardUpdated", { action: "DOCTOR_APPROVED" });
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      success: true,
+      message: "Doctor approved successfully",
+      data: userResponse,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to approve doctor",
+    });
+  }
+};
+
+const rejectDoctor = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId);
+
+    if (!user || user.role !== "DOCTOR") {
+      return res.status(404).json({
+        success: false,
+        message: "Pending doctor not found",
+      });
+    }
+
+    if (user.verificationStatus !== "PENDING") {
+      return res.status(400).json({
+        success: false,
+        message: "Doctor is not pending approval",
+      });
+    }
+
+    if (
+      req.user.role === "HOSPITAL_ADMIN" &&
+      String(user.hospital) !== String(req.user.hospital)
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    user.verificationStatus = "REJECTED";
+    user.isVerified = false;
+    await user.save();
+
+    const doctor = await Doctor.findOne({ user: user._id });
+
+    await logActivity({
+      action: "DOCTOR_REJECTED",
+      entityType: "Doctor",
+      entityId: doctor?._id || user._id,
+      description: `Doctor ${user.name} rejected`,
+      performedBy: req.user.id,
+    });
+
+    await createNotification({
+      title: "Doctor Rejected",
+      message: `Dr. ${user.name}'s registration request was rejected.`,
+      type: "ERROR",
+    });
+
+    emitEvent("doctorRejected", {
+      userId: user._id,
+      doctorId: doctor?._id,
+      doctorName: user.name,
+    });
+
+    emitEvent("dashboardUpdated", { action: "DOCTOR_REJECTED" });
+
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      success: true,
+      message: "Doctor rejected",
+      data: userResponse,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to reject doctor",
     });
   }
 };
@@ -288,5 +536,8 @@ module.exports = {
   createDoctor,
   getDoctors,
   getDoctorsByHospital,
+  getPendingDoctors,
+  approveDoctor,
+  rejectDoctor,
   updateDoctor,
 };

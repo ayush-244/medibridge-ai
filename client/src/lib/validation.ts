@@ -31,3 +31,29 @@ export function getPhoneError(phone: string, required = false): string | null {
   }
   return null;
 }
+
+export function isValidPassword(password: string): boolean {
+  return getPasswordError(password) === null;
+}
+
+export function getPasswordError(password: string, required = true): string | null {
+  if (!password) {
+    return required ? "Password is required" : null;
+  }
+  if (password.length < 8) {
+    return "Password must be at least 8 characters";
+  }
+  if (!/[a-z]/.test(password)) {
+    return "Password must contain at least one lowercase letter";
+  }
+  if (!/[A-Z]/.test(password)) {
+    return "Password must contain at least one uppercase letter";
+  }
+  if (!/\d/.test(password)) {
+    return "Password must contain at least one number";
+  }
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return "Password must contain at least one special character";
+  }
+  return null;
+}

@@ -105,7 +105,7 @@ export function validateDoctorForm(
     return "Select a valid specialization";
   }
   if (!values.hospital) return "Hospital is required";
-  const emailError = getEmailError(values.email);
+  const emailError = getEmailError(values.email, true);
   if (emailError) return emailError;
   return null;
 }
@@ -115,7 +115,7 @@ export function toCreateDoctorPayload(
 ): CreateDoctorPayload {
   return {
     name: values.name.trim(),
-    email: values.email.trim() || undefined,
+    email: values.email.trim(),
     specialization: values.specialization.trim(),
     profilePhoto: values.profilePhoto,
     experience: values.experience ? Number(values.experience) : undefined,

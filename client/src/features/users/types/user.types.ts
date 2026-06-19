@@ -36,7 +36,6 @@ export interface UserDetail extends User {
 export interface CreateUserPayload {
   name: string;
   email: string;
-  password: string;
   role: ManageableRole;
   hospital?: string;
   specialization?: string;
@@ -46,11 +45,15 @@ export interface CreateUserPayload {
 export interface CreateUserFormValues {
   name: string;
   email: string;
-  password: string;
   role: ManageableRole | "";
   hospital: string;
   specialization: string;
   experience: string;
+}
+
+export interface CreateUserResult {
+  user: User;
+  temporaryPassword?: string;
 }
 
 export interface UserFilters {

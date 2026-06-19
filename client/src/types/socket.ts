@@ -13,6 +13,15 @@ export const SOCKET_EVENTS = {
   RESERVATION_EXTENDED: "reservationExtended",
   RESERVATION_CANCELLED: "reservationCancelled",
   PATIENT_ARRIVED: "patientArrived",
+  HOSPITAL_REGISTERED: "hospitalRegistered",
+  HOSPITAL_APPROVED: "hospitalApproved",
+  HOSPITAL_REJECTED: "hospitalRejected",
+  HOSPITAL_ADMIN_APPROVED: "hospitalAdminApproved",
+  HOSPITAL_ADMIN_REJECTED: "hospitalAdminRejected",
+  DOCTOR_REGISTERED: "doctorRegistered",
+  DOCTOR_APPROVED: "doctorApproved",
+  DOCTOR_REJECTED: "doctorRejected",
+  PASSWORD_CHANGED: "passwordChanged",
 } as const;
 
 export type SocketEventName =

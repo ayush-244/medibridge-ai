@@ -133,6 +133,7 @@ export function DoctorForm({
             type="email"
             value={values.email}
             onChange={(e) => setValues({ ...values, email: e.target.value })}
+            required
           />
         </div>
       </div>
