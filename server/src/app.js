@@ -24,6 +24,7 @@ const adminRoutes = require(
 );
 const userRoutes = require("./routes/user.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const copilotRoutes = require("./routes/copilot.routes");
 
 const doctorDashboardRoutes = require(
   "./routes/doctorDashboard.routes"
@@ -79,6 +80,7 @@ app.use(
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/copilot", copilotRoutes);
 app.use(
   "/api/reports",
   reportRoutes

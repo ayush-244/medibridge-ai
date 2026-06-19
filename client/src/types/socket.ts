@@ -22,6 +22,9 @@ export const SOCKET_EVENTS = {
   DOCTOR_APPROVED: "doctorApproved",
   DOCTOR_REJECTED: "doctorRejected",
   PASSWORD_CHANGED: "passwordChanged",
+  COPILOT_SESSION_STARTED: "copilotSessionStarted",
+  COPILOT_QUESTION_ASKED: "copilotQuestionAsked",
+  COPILOT_RESPONSE_GENERATED: "copilotResponseGenerated",
 } as const;
 
 export type SocketEventName =
@@ -84,6 +87,15 @@ export interface ReservationActionPayload {
   durationHours?: number;
 }
 
+export interface CopilotEventPayload {
+  sessionId: string;
+  patientId: string;
+  patientName?: string;
+  question?: string;
+  confidence?: number;
+  userId?: string;
+}
+
 export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.NOTIFICATION_CREATED]: NotificationCreatedPayload;
   [SOCKET_EVENTS.REFERRAL_ACCEPTED]: ReferralAcceptedPayload;
@@ -99,6 +111,9 @@ export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.RESERVATION_EXTENDED]: ReservationActionPayload;
   [SOCKET_EVENTS.RESERVATION_CANCELLED]: ReservationActionPayload;
   [SOCKET_EVENTS.PATIENT_ARRIVED]: ReservationActionPayload;
+  [SOCKET_EVENTS.COPILOT_SESSION_STARTED]: CopilotEventPayload;
+  [SOCKET_EVENTS.COPILOT_QUESTION_ASKED]: CopilotEventPayload;
+  [SOCKET_EVENTS.COPILOT_RESPONSE_GENERATED]: CopilotEventPayload;
 }
 
 export interface SocketLastEvent {

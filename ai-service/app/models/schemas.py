@@ -68,7 +68,21 @@ class ChatResponse(BaseModel):
         ...,
         examples=["Patient is taking Aspirin and Atorvastatin."],
     )
+    summary: str = Field(
+        default="",
+        examples=["Patient has documented coronary artery disease with diabetes and hypertension."],
+    )
+    evidence: List[str] = Field(default_factory=list)
+    confidence: int = Field(default=0, ge=0, le=100, examples=[95])
+    suggestedQuestions: List[str] = Field(default_factory=list)
     citations: List[Citation] = Field(default_factory=list)
+
+
+class PatientDocument(BaseModel):
+    fileName: str
+    uploadDate: str = ""
+    chunkCount: int = 0
+    patientId: str = ""
 
 
 class RecommendationRequest(BaseModel):
@@ -136,6 +150,14 @@ class HospitalMatchRequest(BaseModel):
 class ApiResponse(BaseModel):
     success: bool
     data: Optional[
-        Union[SummaryData, UploadData, ChatResponse, RecommendationResponse,HospitalMatchData, Dict[str, Any]]
+        Union[
+            SummaryData,
+            UploadData,
+            ChatResponse,
+            RecommendationResponse,
+            HospitalMatchData,
+            List[PatientDocument],
+            Dict[str, Any],
+        ]
     ] = None
     message: Optional[str] = None

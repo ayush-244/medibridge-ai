@@ -2,6 +2,7 @@ import {
   Activity,
   BarChart3,
   Bell,
+  Bot,
   Building2,
   CalendarClock,
   ClipboardList,
@@ -40,6 +41,29 @@ export const navigationConfig: NavItem[] = [
     href: ROUTES.DOCTOR_DASHBOARD,
     icon: LayoutDashboard,
     roles: [ROLES.DOCTOR],
+  },
+  {
+    title: "AI",
+    icon: Bot,
+    roles: [
+      ROLES.SUPER_ADMIN,
+      ROLES.HOSPITAL_ADMIN,
+      ROLES.REFERRAL_COORDINATOR,
+      ROLES.DOCTOR,
+    ],
+    children: [
+      {
+        title: "Clinical Copilot",
+        href: ROUTES.COPILOT,
+        icon: Bot,
+        roles: [
+          ROLES.SUPER_ADMIN,
+          ROLES.HOSPITAL_ADMIN,
+          ROLES.REFERRAL_COORDINATOR,
+          ROLES.DOCTOR,
+        ],
+      },
+    ],
   },
   {
     title: "Referrals",
@@ -248,6 +272,12 @@ export const routeRoles: Record<string, UserRole[]> = {
     ROLES.HOSPITAL_ADMIN,
     ROLES.REFERRAL_COORDINATOR,
   ],
+  [ROUTES.COPILOT]: [
+    ROLES.SUPER_ADMIN,
+    ROLES.HOSPITAL_ADMIN,
+    ROLES.REFERRAL_COORDINATOR,
+    ROLES.DOCTOR,
+  ],
   [ROUTES.AI_RECOMMENDATIONS]: [
     ROLES.SUPER_ADMIN,
     ROLES.HOSPITAL_ADMIN,
@@ -291,6 +321,7 @@ export const breadcrumbLabels: Record<string, string> = {
   referrals: "Referrals",
   inbound: "Inbound",
   outbound: "Outbound",
+  copilot: "Clinical Copilot",
   "ai-recommendations": "AI Recommendations",
   hospitals: "Hospitals",
   maps: "Hospital Map",

@@ -135,3 +135,67 @@ def query_document_chunks(
         top_k,
     )
     return chunks
+
+
+def list_patient_documents(
+    patient_id: str,
+    settings: Optional[Settings] = None,
+) -> List[Dict[str, Any]]:
+    config = settings or get_settings()
+    sanitized_patient_id = patient_id.strip()
+
+    if not sanitized_patient_id:
+        return []
+
+    try:
+        collection = _get_collection(config)
+        results = collection.get(
+            where={"patientId": sanitized_patient_id},
+            include=["metadatas"],
+        )
+    except Exception as exc:
+        logger.error(
+            "ChromaDB document list failed for patientId=%s: %s",
+            sanitized_patient_id,
+            exc,
+        )
+        raise VectorStoreError(f"Failed to list patient documents: {exc}") from exc
+
+    metadatas = results.get("metadatas") or []
+    documents_by_file: Dict[str, Dict[str, Any]] = {}
+
+    for metadata in metadatas:
+        if not metadata:
+            continue
+
+        file_name = str(metadata.get("fileName", "")).strip()
+        if not file_name:
+            continue
+
+        upload_date = str(metadata.get("uploadDate", ""))
+        patient_value = str(metadata.get("patientId", sanitized_patient_id))
+
+        if file_name not in documents_by_file:
+            documents_by_file[file_name] = {
+                "fileName": file_name,
+                "uploadDate": upload_date,
+                "chunkCount": 0,
+                "patientId": patient_value,
+            }
+
+        documents_by_file[file_name]["chunkCount"] += 1
+        if upload_date and not documents_by_file[file_name]["uploadDate"]:
+            documents_by_file[file_name]["uploadDate"] = upload_date
+
+    documents = sorted(
+        documents_by_file.values(),
+        key=lambda item: item.get("uploadDate", ""),
+        reverse=True,
+    )
+
+    logger.info(
+        "Listed %d documents for patientId=%s",
+        len(documents),
+        sanitized_patient_id,
+    )
+    return documents

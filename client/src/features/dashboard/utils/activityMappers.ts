@@ -9,6 +9,13 @@ function resolveActivityType(
   const entity = log.entityType.toLowerCase();
 
   if (
+    action.includes("COPILOT") ||
+    entity.includes("chatsession")
+  ) {
+    return "system";
+  }
+
+  if (
     action.includes("REFERRAL") ||
     entity.includes("referral")
   ) {

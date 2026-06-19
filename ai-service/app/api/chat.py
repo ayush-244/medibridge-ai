@@ -28,6 +28,10 @@ def chat(request: ChatRequest) -> ApiResponse:
             success=True,
             data=ChatResponse(
                 answer=result["answer"],
+                summary=result.get("summary", ""),
+                evidence=result.get("evidence", []),
+                confidence=result.get("confidence", 0),
+                suggestedQuestions=result.get("suggestedQuestions", []),
                 citations=[Citation(**citation) for citation in result["citations"]],
             ),
         )

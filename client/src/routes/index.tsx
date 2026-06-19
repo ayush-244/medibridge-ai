@@ -29,6 +29,7 @@ import { PendingHospitalAdminsPage } from "@/pages/admin/PendingHospitalAdminsPa
 import { DoctorDashboardPage } from "@/pages/dashboard/DoctorDashboardPage";
 import { MapsPage } from "@/pages/maps/MapsPage";
 import { AIRecommendationsPage } from "@/pages/AIRecommendationsPage";
+import { CopilotPage } from "@/pages/copilot/CopilotPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { HomeRedirect } from "@/routes/HomeRedirect";
 
@@ -83,6 +84,14 @@ export function AppRoutes() {
                   path={ROUTES.DOCTOR_DASHBOARD}
                   element={<DoctorDashboardPage />}
                 />
+              </Route>
+
+              <Route
+                element={
+                  <RoleRoute allowedRoles={routeRoles[ROUTES.COPILOT]} />
+                }
+              >
+                <Route path={ROUTES.COPILOT} element={<CopilotPage />} />
               </Route>
 
               <Route

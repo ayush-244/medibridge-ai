@@ -127,14 +127,22 @@ class TestChatService:
     def test_answer_and_citation_generation(self, mock_retrieve, mock_llm_factory):
         mock_retrieve.return_value = SAMPLE_CHUNKS
         mock_llm = MagicMock()
-        mock_llm.generate_completion.return_value = (
-            "Patient is taking Aspirin and Atorvastatin."
+        mock_llm.generate_completion.return_value = json.dumps(
+            {
+                "answer": "Patient is taking Aspirin and Atorvastatin.",
+                "summary": "Patient on cardiovascular therapy.",
+                "evidence": ["Aspirin documented", "Atorvastatin documented"],
+                "confidence": 92,
+                "suggestedQuestions": ["What is the diagnosis?"],
+            }
         )
         mock_llm_factory.return_value = mock_llm
 
         result = chat_with_documents("PATIENT001", "What medications?")
 
         assert result["answer"] == "Patient is taking Aspirin and Atorvastatin."
+        assert result["summary"] == "Patient on cardiovascular therapy."
+        assert result["confidence"] > 0
         assert len(result["citations"]) == 2
         assert result["citations"][0]["fileName"] == "report.pdf"
         mock_llm.generate_completion.assert_called_once()

@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.chat import router as chat_router
+from app.api.documents import router as documents_router
 from app.api.recommendation import router as recommendation_router
 from app.api.summary import router as summary_router
 from app.api.upload import router as upload_router
@@ -91,5 +92,6 @@ async def unhandled_exception_handler(
 app.include_router(upload_router, prefix="/api/ai")
 app.include_router(summary_router, prefix="/api/ai")
 app.include_router(chat_router, prefix="/api/ai")
+app.include_router(documents_router, prefix="/api/ai")
 app.include_router(recommendation_router, prefix="/api/ai")
 app.include_router(hospital_match_router, prefix="/api/ai")

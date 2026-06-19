@@ -1,0 +1,321 @@
+const ChatSession = require("../models/ChatSession");
+const ChatMessage = require("../models/ChatMessage");
+const Referral = require("../models/Referral");
+const logActivity = require("../services/activityLogger.service");
+const emitEvent = require("../services/socketEmitter.service");
+
+const AI_SERVICE_URL =
+  process.env.AI_SERVICE_URL || "http://localhost:8000/api/ai";
+
+const COPILOT_ROLES = [
+  "SUPER_ADMIN",
+  "HOSPITAL_ADMIN",
+  "REFERRAL_COORDINATOR",
+  "DOCTOR",
+];
+
+async function callAiChat(patientId, question) {
+  const response = await fetch(`${AI_SERVICE_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      patient_id: patientId,
+      question,
+    }),
+  });
+
+  const body = await response.json();
+
+  if (!response.ok || !body.success) {
+    throw new Error(body.message || "Failed to generate AI response.");
+  }
+
+  return body.data;
+}
+
+async function callAiDocuments(patientId) {
+  const response = await fetch(
+    `${AI_SERVICE_URL}/documents/${encodeURIComponent(patientId)}`,
+  );
+
+  const body = await response.json();
+
+  if (!response.ok || !body.success) {
+    throw new Error(body.message || "Failed to fetch documents.");
+  }
+
+  return body.data || [];
+}
+
+function buildSessionTitle(question) {
+  const trimmed = question.trim();
+  if (trimmed.length <= 60) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, 57)}...`;
+}
+
+const getSessions = async (req, res) => {
+  try {
+    const sessions = await ChatSession.find({ userId: req.user.id })
+      .sort({ updatedAt: -1 })
+      .limit(50)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: sessions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+const getSession = async (req, res) => {
+  try {
+    const session = await ChatSession.findOne({
+      _id: req.params.id,
+      userId: req.user.id,
+    }).lean();
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Session not found",
+      });
+    }
+
+    const messages = await ChatMessage.find({ sessionId: session._id })
+      .sort({ createdAt: 1 })
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        session,
+        messages,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+const createSession = async (req, res) => {
+  try {
+    const { patientId, referralId, patientName, condition, title } = req.body;
+
+    if (!patientId?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Patient ID is required",
+      });
+    }
+
+    let resolvedPatientName = patientName || "";
+    let resolvedCondition = condition || "";
+    let resolvedReferralId = referralId || null;
+
+    if (referralId) {
+      const referral = await Referral.findById(referralId).lean();
+      if (referral) {
+        resolvedPatientName = referral.patientName;
+        resolvedCondition = referral.condition;
+        resolvedReferralId = referral._id;
+      }
+    }
+
+    const session = await ChatSession.create({
+      patientId: patientId.trim(),
+      referralId: resolvedReferralId,
+      userId: req.user.id,
+      title: title?.trim() || `${patientId.trim()} Clinical Session`,
+      patientName: resolvedPatientName,
+      condition: resolvedCondition,
+    });
+
+    await logActivity({
+      action: "COPILOT_SESSION_STARTED",
+      entityType: "ChatSession",
+      entityId: session._id,
+      description: `Clinical Copilot session started for ${patientId.trim()}`,
+      performedBy: req.user.id,
+    });
+
+    emitEvent("copilotSessionStarted", {
+      sessionId: session._id.toString(),
+      patientId: session.patientId,
+      patientName: session.patientName,
+      userId: req.user.id,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: session,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+const sendMessage = async (req, res) => {
+  try {
+    const { question } = req.body;
+    const sessionId = req.params.id;
+
+    if (!question?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Question is required",
+      });
+    }
+
+    const session = await ChatSession.findOne({
+      _id: sessionId,
+      userId: req.user.id,
+    });
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Session not found",
+      });
+    }
+
+    const sanitizedQuestion = question.trim();
+
+    const userMessage = await ChatMessage.create({
+      sessionId: session._id,
+      role: "user",
+      content: sanitizedQuestion,
+    });
+
+    await logActivity({
+      action: "COPILOT_QUESTION_ASKED",
+      entityType: "ChatSession",
+      entityId: session._id,
+      description: `Copilot question for ${session.patientId}: ${sanitizedQuestion.slice(0, 80)}`,
+      performedBy: req.user.id,
+    });
+
+    emitEvent("copilotQuestionAsked", {
+      sessionId: session._id.toString(),
+      patientId: session.patientId,
+      question: sanitizedQuestion,
+      userId: req.user.id,
+    });
+
+    let aiResponse;
+
+    try {
+      aiResponse = await callAiChat(session.patientId, sanitizedQuestion);
+    } catch (aiError) {
+      console.error(aiError);
+      return res.status(502).json({
+        success: false,
+        message: aiError.message || "Failed to generate AI response.",
+      });
+    }
+
+    const assistantMessage = await ChatMessage.create({
+      sessionId: session._id,
+      role: "assistant",
+      content: aiResponse.answer,
+      summary: aiResponse.summary || "",
+      evidence: aiResponse.evidence || [],
+      confidence: aiResponse.confidence || 0,
+      citations: aiResponse.citations || [],
+      suggestedQuestions: aiResponse.suggestedQuestions || [],
+    });
+
+    const messageCount = await ChatMessage.countDocuments({
+      sessionId: session._id,
+      role: "user",
+    });
+
+    if (messageCount === 1) {
+      session.title = buildSessionTitle(sanitizedQuestion);
+    }
+
+    session.updatedAt = new Date();
+    await session.save();
+
+    await logActivity({
+      action: "COPILOT_RESPONSE_GENERATED",
+      entityType: "ChatSession",
+      entityId: session._id,
+      description: `Copilot response generated for ${session.patientId} (confidence ${aiResponse.confidence || 0}%)`,
+      performedBy: req.user.id,
+    });
+
+    emitEvent("copilotResponseGenerated", {
+      sessionId: session._id.toString(),
+      patientId: session.patientId,
+      confidence: aiResponse.confidence || 0,
+      userId: req.user.id,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userMessage,
+        assistantMessage,
+        session,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+const getDocuments = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    if (!patientId?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Patient ID is required",
+      });
+    }
+
+    const documents = await callAiDocuments(patientId.trim());
+
+    res.status(200).json({
+      success: true,
+      data: documents,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({
+      success: false,
+      message: error.message || "Failed to fetch documents.",
+    });
+  }
+};
+
+module.exports = {
+  COPILOT_ROLES,
+  getSessions,
+  getSession,
+  createSession,
+  sendMessage,
+  getDocuments,
+};
