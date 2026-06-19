@@ -80,6 +80,16 @@ export const navigationConfig: NavItem[] = [
           ROLES.REFERRAL_COORDINATOR,
         ],
       },
+      {
+        title: "AI Recommendations",
+        href: ROUTES.AI_RECOMMENDATIONS,
+        icon: Activity,
+        roles: [
+          ROLES.SUPER_ADMIN,
+          ROLES.HOSPITAL_ADMIN,
+          ROLES.REFERRAL_COORDINATOR,
+        ],
+      },
     ],
   },
   {
@@ -220,6 +230,11 @@ export const routeRoles: Record<string, UserRole[]> = {
     ROLES.HOSPITAL_ADMIN,
     ROLES.REFERRAL_COORDINATOR,
   ],
+  [ROUTES.AI_RECOMMENDATIONS]: [
+    ROLES.SUPER_ADMIN,
+    ROLES.HOSPITAL_ADMIN,
+    ROLES.REFERRAL_COORDINATOR,
+  ],
   [ROUTES.HOSPITALS]: [ROLES.SUPER_ADMIN],
   [ROUTES.MAPS]: [
     ROLES.SUPER_ADMIN,
@@ -255,6 +270,7 @@ export const breadcrumbLabels: Record<string, string> = {
   referrals: "Referrals",
   inbound: "Inbound",
   outbound: "Outbound",
+  "ai-recommendations": "AI Recommendations",
   hospitals: "Hospitals",
   maps: "Hospital Map",
   doctors: "Doctors",

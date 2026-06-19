@@ -20,6 +20,7 @@ import { UsersPage } from "@/pages/users/UsersPage";
 import { AuditLogsPage } from "@/pages/admin/AuditLogsPage";
 import { DoctorDashboardPage } from "@/pages/dashboard/DoctorDashboardPage";
 import { MapsPage } from "@/pages/maps/MapsPage";
+import { AIRecommendationsPage } from "@/pages/AIRecommendationsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { HomeRedirect } from "@/routes/HomeRedirect";
 
@@ -69,6 +70,10 @@ export function AppRoutes() {
               <Route
                 path={ROUTES.REFERRALS_OUTBOUND}
                 element={<ReferralsPage />}
+              />
+              <Route
+                path={ROUTES.AI_RECOMMENDATIONS}
+                element={<AIRecommendationsPage />}
               />
             </Route>
 

@@ -15,6 +15,7 @@ export const ROUTES = {
   USERS: "/users",
   AUDIT_LOGS: "/admin/audit-logs",
   MAPS: "/maps",
+  AI_RECOMMENDATIONS: "/ai-recommendations",
 } as const;
 
 export type AppRoute = (typeof ROUTES)[keyof typeof ROUTES];
