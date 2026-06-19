@@ -13,6 +13,7 @@ from app.core.logger import logger
 from app.models.schemas import ApiResponse
 from app.services.llm_service import get_llm_service
 from app.services.vector_service import validate_chroma_connection
+from app.api.hospital_match import router as hospital_match_router
 
 
 @asynccontextmanager
@@ -82,3 +83,4 @@ app.include_router(upload_router, prefix="/api/ai")
 app.include_router(summary_router, prefix="/api/ai")
 app.include_router(chat_router, prefix="/api/ai")
 app.include_router(recommendation_router, prefix="/api/ai")
+app.include_router(hospital_match_router, prefix="/api/ai")

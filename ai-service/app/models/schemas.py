@@ -94,10 +94,48 @@ class RecommendationResponse(BaseModel):
     )
     supportingEvidence: List[Citation] = Field(default_factory=list)
 
+class RecommendedHospital(BaseModel):
+    hospitalId: str
+    hospitalName: str
+
+    doctorId: str
+    doctorName: str
+
+    specialist: str
+
+    availableBeds: int
+
+    distanceKm: float
+
+    score: int
+
+    breakdown: Dict[str, float]
+
+
+class HospitalMatchData(BaseModel):
+    specialist: str
+    recommendedHospitals: List[RecommendedHospital] = Field(
+        default_factory=list
+    )
+
+
+class HospitalMatchRequest(BaseModel):
+    patient_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        examples=["PATIENT001"],
+    )
+
+    referral_id: str = Field(
+        ...,
+        min_length=1,
+        examples=["6a26b08bceaee55f6b61bd97"],
+    )
 
 class ApiResponse(BaseModel):
     success: bool
     data: Optional[
-        Union[SummaryData, UploadData, ChatResponse, RecommendationResponse, Dict[str, Any]]
+        Union[SummaryData, UploadData, ChatResponse, RecommendationResponse,HospitalMatchData, Dict[str, Any]]
     ] = None
     message: Optional[str] = None

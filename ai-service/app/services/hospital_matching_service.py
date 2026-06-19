@@ -99,14 +99,6 @@ def match_hospitals(
         ]
 
 
-        for d in hospital_doctors:
-            print(
-                f"Doctor={d.get('name')} | "
-                f"Specialization={d.get('specialization')} | "
-                f"Status={d.get('status')} | "
-                f"Hospital={d.get('hospital')}"
-            )
-
         if not available_doctors:
             continue
 
@@ -179,3 +171,27 @@ def match_hospitals(
         "specialist": specialist,
         "recommendedHospitals": recommended_hospitals[:5],
     }
+
+from app.services.medibridge_api_service import (
+    get_matching_data,
+    get_referral_data,
+)
+
+
+def generate_hospital_match(
+    patient_id: str,
+    referral_id: str,
+):
+    referral_response = get_referral_data(
+        referral_id
+    )
+
+    matching_response = get_matching_data()
+
+    referral_data = referral_response["data"]
+
+    return match_hospitals(
+        patient_id=patient_id,
+        referral_data=referral_data,
+        matching_data=matching_response,
+    )
