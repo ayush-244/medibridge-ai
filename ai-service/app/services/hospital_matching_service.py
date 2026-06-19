@@ -74,13 +74,8 @@ def match_hospitals(
 
         hospital_id = hospital["_id"]
 
-        print("\n================================================")
-        print("HOSPITAL:", hospital["name"])
-        print("HOSPITAL ID:", hospital_id)
-
         # Don't recommend same hospital
         if hospital_id == origin_hospital_id:
-            print("SKIPPED -> Origin Hospital")
             continue
 
         # STEP 5
@@ -103,10 +98,6 @@ def match_hospitals(
             if doctor.get("status", "AVAILABLE") == "AVAILABLE"
         ]
 
-        print("Required Specialist:", specialist)
-        print("Doctors Found:", len(hospital_doctors))
-        print("Specialist Doctors:", len(specialist_doctors))
-        print("Available Doctors:", len(available_doctors))
 
         for d in hospital_doctors:
             print(
@@ -117,7 +108,6 @@ def match_hospitals(
             )
 
         if not available_doctors:
-            print("REJECTED -> No Available Specialist Doctors")
             continue
 
         # STEP 6
@@ -131,10 +121,7 @@ def match_hospitals(
             - reserved_count
         )
 
-        print("Available Beds:", available_beds)
-
         if available_beds <= 0:
-            print("REJECTED -> No Beds")
             continue
 
         # STEP 7
@@ -143,18 +130,13 @@ def match_hospitals(
             origin_lon,
             hospital["location"]["latitude"],
             hospital["location"]["longitude"],
-        )
-
-        print("Distance KM:", round(distance_km, 2))
+        )       
 
         # STEP 8
         best_doctor = min(
             available_doctors,
             key=lambda d: d.get("currentPatients", 0),
         )
-
-        print("Selected Doctor:", best_doctor["name"])
-
         # STEP 9
         score_result = calculate_hospital_score(
             has_specialist=True,
@@ -170,8 +152,6 @@ def match_hospitals(
             distance_km=distance_km,
         )
 
-        print("Score:", score_result["score"])
-
         recommended_hospitals.append(
             {
                 "hospitalId": hospital_id,
@@ -186,7 +166,7 @@ def match_hospitals(
             }
         )
 
-    print("\nFINAL MATCHES:", len(recommended_hospitals))
+
 
     recommended_hospitals.sort(
         key=lambda hospital: (
