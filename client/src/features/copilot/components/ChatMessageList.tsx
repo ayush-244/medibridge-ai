@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import type { ChatMessage } from "@/features/copilot/types/copilot.types";
 import { ChatMessageBubble } from "@/features/copilot/components/ChatMessageBubble";
 import { ThinkingIndicator } from "@/features/copilot/components/ThinkingIndicator";
@@ -12,6 +11,7 @@ interface ChatMessageListProps {
   thinkingMessage: string;
   onSuggestedQuestion: (question: string) => void;
   onRegenerate: () => void;
+  headerContent?: React.ReactNode;
 }
 
 export function ChatMessageList({
@@ -22,12 +22,14 @@ export function ChatMessageList({
   thinkingMessage,
   onSuggestedQuestion,
   onRegenerate,
+  headerContent,
 }: ChatMessageListProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isSending]);
+  }, [messages, isSending, headerContent]);
 
   const lastAssistantIndex = [...messages]
     .map((msg, index) => ({ msg, index }))
@@ -35,8 +37,10 @@ export function ChatMessageList({
     .find(({ msg }) => msg.role === "assistant")?.index;
 
   return (
-    <ScrollArea className="h-full flex-1 px-4 py-4">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div className="mx-auto flex max-w-[900px] flex-col gap-5 px-4 py-5">
+        {headerContent}
+
         {messages.map((message, index) => (
           <ChatMessageBubble
             key={message._id}
@@ -53,8 +57,8 @@ export function ChatMessageList({
 
         {isSending && <ThinkingIndicator message={thinkingMessage} />}
 
-        <div ref={bottomRef} />
+        <div ref={bottomRef} className="h-1" />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

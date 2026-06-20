@@ -3,6 +3,10 @@ const ChatMessage = require("../models/ChatMessage");
 const Referral = require("../models/Referral");
 const logActivity = require("../services/activityLogger.service");
 const emitEvent = require("../services/socketEmitter.service");
+const {
+  trackCopilotEvent,
+  getCopilotAnalyticsSummary,
+} = require("../services/copilotAnalytics.service");
 
 const AI_SERVICE_URL =
   process.env.AI_SERVICE_URL || "http://localhost:8000/api/ai";
@@ -45,6 +49,38 @@ async function callAiDocuments(patientId) {
   }
 
   return body.data || [];
+}
+
+async function callAiSnapshot(patientId) {
+  const response = await fetch(`${AI_SERVICE_URL}/patient-snapshot`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ patient_id: patientId }),
+  });
+
+  const body = await response.json();
+
+  if (!response.ok || !body.success) {
+    throw new Error(body.message || "Failed to generate patient snapshot.");
+  }
+
+  return body.data;
+}
+
+async function callAiClinicalIntelligence(patientId) {
+  const response = await fetch(`${AI_SERVICE_URL}/clinical-intelligence`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ patient_id: patientId }),
+  });
+
+  const body = await response.json();
+
+  if (!response.ok || !body.success) {
+    throw new Error(body.message || "Failed to generate clinical intelligence.");
+  }
+
+  return body.data;
 }
 
 function buildSessionTitle(question) {
@@ -151,6 +187,14 @@ const createSession = async (req, res) => {
       performedBy: req.user.id,
     });
 
+    await trackCopilotEvent({
+      userId: req.user.id,
+      sessionId: session._id,
+      patientId: session.patientId,
+      eventType: "SESSION_STARTED",
+      diagnosis: resolvedCondition,
+    });
+
     emitEvent("copilotSessionStarted", {
       sessionId: session._id.toString(),
       patientId: session.patientId,
@@ -211,6 +255,13 @@ const sendMessage = async (req, res) => {
       performedBy: req.user.id,
     });
 
+    await trackCopilotEvent({
+      userId: req.user.id,
+      sessionId: session._id,
+      patientId: session.patientId,
+      eventType: "QUESTION_ASKED",
+    });
+
     emitEvent("copilotQuestionAsked", {
       sessionId: session._id.toString(),
       patientId: session.patientId,
@@ -259,6 +310,15 @@ const sendMessage = async (req, res) => {
       entityId: session._id,
       description: `Copilot response generated for ${session.patientId} (confidence ${aiResponse.confidence || 0}%)`,
       performedBy: req.user.id,
+    });
+
+    await trackCopilotEvent({
+      userId: req.user.id,
+      sessionId: session._id,
+      patientId: session.patientId,
+      eventType: "RESPONSE_GENERATED",
+      confidence: aiResponse.confidence || 0,
+      diagnosis: session.condition || "",
     });
 
     emitEvent("copilotResponseGenerated", {
@@ -311,6 +371,160 @@ const getDocuments = async (req, res) => {
   }
 };
 
+const getPatientSnapshot = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    if (!patientId?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Patient ID is required",
+      });
+    }
+
+    const snapshot = await callAiSnapshot(patientId.trim());
+
+    await logActivity({
+      action: "PATIENT_SNAPSHOT_GENERATED",
+      entityType: "Patient",
+      entityId: patientId.trim(),
+      description: `AI patient snapshot generated for ${patientId.trim()} (${snapshot.primaryDiagnosis})`,
+      performedBy: req.user.id,
+    });
+
+    await logActivity({
+      action: "RISK_ANALYSIS_GENERATED",
+      entityType: "Patient",
+      entityId: patientId.trim(),
+      description: `Risk analysis generated for ${patientId.trim()} (${snapshot.riskLevel} risk)`,
+      performedBy: req.user.id,
+    });
+
+    await trackCopilotEvent({
+      userId: req.user.id,
+      patientId: patientId.trim(),
+      eventType: "SNAPSHOT_GENERATED",
+      diagnosis: snapshot.primaryDiagnosis || "",
+      specialist: snapshot.recommendedSpecialist || "",
+      confidence: snapshot.confidence || 0,
+    });
+
+    await trackCopilotEvent({
+      userId: req.user.id,
+      patientId: patientId.trim(),
+      eventType: "RISK_ANALYSIS_GENERATED",
+      diagnosis: snapshot.primaryDiagnosis || "",
+      specialist: snapshot.recommendedSpecialist || "",
+      confidence: snapshot.confidence || 0,
+      metadata: {
+        riskLevel: snapshot.riskLevel,
+        urgency: snapshot.urgency,
+        transferRecommendation: snapshot.transferRecommendation,
+      },
+    });
+
+    emitEvent("patientSnapshotGenerated", {
+      patientId: patientId.trim(),
+      diagnosis: snapshot.primaryDiagnosis,
+      riskLevel: snapshot.riskLevel,
+      confidence: snapshot.confidence,
+      userId: req.user.id,
+    });
+
+    emitEvent("riskAnalysisGenerated", {
+      patientId: patientId.trim(),
+      riskLevel: snapshot.riskLevel,
+      urgency: snapshot.urgency,
+      specialist: snapshot.recommendedSpecialist,
+      userId: req.user.id,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: snapshot,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({
+      success: false,
+      message: error.message || "Failed to generate patient snapshot.",
+    });
+  }
+};
+
+const getClinicalIntelligence = async (req, res) => {
+  try {
+    const { patientId } = req.params;
+
+    if (!patientId?.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Patient ID is required",
+      });
+    }
+
+    const intelligence = await callAiClinicalIntelligence(patientId.trim());
+
+    await logActivity({
+      action: "RISK_ANALYSIS_GENERATED",
+      entityType: "Patient",
+      entityId: patientId.trim(),
+      description: `Risk analysis generated for ${patientId.trim()} (${intelligence.riskLevel} risk)`,
+      performedBy: req.user.id,
+    });
+
+    await trackCopilotEvent({
+      userId: req.user.id,
+      patientId: patientId.trim(),
+      eventType: "RISK_ANALYSIS_GENERATED",
+      diagnosis: intelligence.primaryDiagnosis || "",
+      specialist: intelligence.recommendedSpecialist || "",
+      confidence: intelligence.confidence || 0,
+      metadata: {
+        riskLevel: intelligence.riskLevel,
+        urgency: intelligence.urgency,
+        transferRecommendation: intelligence.transferRecommendation,
+      },
+    });
+
+    emitEvent("riskAnalysisGenerated", {
+      patientId: patientId.trim(),
+      riskLevel: intelligence.riskLevel,
+      urgency: intelligence.urgency,
+      specialist: intelligence.recommendedSpecialist,
+      userId: req.user.id,
+    });
+
+    res.status(200).json({
+      success: true,
+      data: intelligence,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({
+      success: false,
+      message: error.message || "Failed to generate clinical intelligence.",
+    });
+  }
+};
+
+const getAnalytics = async (req, res) => {
+  try {
+    const summary = await getCopilotAnalyticsSummary();
+
+    res.status(200).json({
+      success: true,
+      data: summary,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
 module.exports = {
   COPILOT_ROLES,
   getSessions,
@@ -318,4 +532,7 @@ module.exports = {
   createSession,
   sendMessage,
   getDocuments,
+  getPatientSnapshot,
+  getClinicalIntelligence,
+  getAnalytics,
 };

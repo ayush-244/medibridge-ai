@@ -24,9 +24,9 @@ export function SuggestedQuestions({ questions, onSelect }: SuggestedQuestionsPr
         {questions.map((question) => (
           <Button
             key={question}
-            variant="outline"
+            variant="secondary"
             size="sm"
-            className="h-auto rounded-full border-primary/20 bg-white/80 px-3 py-1.5 text-xs font-normal text-text-primary transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+            className="h-auto rounded-full border border-primary/20 bg-white/80 px-3 py-1.5 text-xs font-normal text-text-primary transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
             onClick={() => onSelect?.(question)}
           >
             {question}

@@ -147,6 +147,45 @@ class HospitalMatchRequest(BaseModel):
         examples=["6a26b08bceaee55f6b61bd97"],
     )
 
+
+class PatientSnapshotRequest(BaseModel):
+    patient_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        examples=["PATIENT002"],
+    )
+
+
+class ClinicalIntelligenceRequest(BaseModel):
+    patient_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        examples=["PATIENT002"],
+    )
+
+
+class PatientSnapshotResponse(BaseModel):
+    primaryDiagnosis: str = Field(..., examples=["Coronary Artery Disease"])
+    riskLevel: str = Field(..., examples=["HIGH"])
+    medications: List[str] = Field(default_factory=list)
+    recommendedSpecialist: str = Field(..., examples=["Cardiology"])
+    urgency: str = Field(..., examples=["Urgent"])
+    transferRecommendation: str = Field(
+        ...,
+        examples=["Transfer within 2 hours"],
+    )
+    confidence: int = Field(..., ge=0, le=100, examples=[95])
+    aiFindings: List[str] = Field(default_factory=list)
+    evidence: List[str] = Field(default_factory=list)
+    citations: List[Citation] = Field(default_factory=list)
+
+
+class ClinicalIntelligenceResponse(PatientSnapshotResponse):
+    pass
+
+
 class ApiResponse(BaseModel):
     success: bool
     data: Optional[
@@ -156,6 +195,8 @@ class ApiResponse(BaseModel):
             ChatResponse,
             RecommendationResponse,
             HospitalMatchData,
+            PatientSnapshotResponse,
+            ClinicalIntelligenceResponse,
             List[PatientDocument],
             Dict[str, Any],
         ]

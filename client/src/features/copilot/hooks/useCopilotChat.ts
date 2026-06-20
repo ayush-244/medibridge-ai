@@ -122,6 +122,11 @@ export function useCopilotChat({ sessionId, onSessionUpdated }: UseCopilotChatOp
     }
   }, [messages, sendMessage]);
 
+  const clearMessages = useCallback(() => {
+    setMessages([]);
+    setError(null);
+  }, []);
+
   return {
     messages,
     isLoading,
@@ -131,6 +136,7 @@ export function useCopilotChat({ sessionId, onSessionUpdated }: UseCopilotChatOp
     thinkingMessage: THINKING_STAGES[thinkingStage],
     sendMessage,
     regenerateLast,
+    clearMessages,
     reload: () => sessionId && loadSession(sessionId),
   };
 }

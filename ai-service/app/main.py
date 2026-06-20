@@ -15,6 +15,8 @@ from app.models.schemas import ApiResponse
 from app.services.llm_service import get_llm_service
 from app.services.vector_service import validate_chroma_connection
 from app.api.hospital_match import router as hospital_match_router
+from app.api.snapshot import router as snapshot_router
+from app.api.clinical_intelligence import router as clinical_intelligence_router
 
 
 @asynccontextmanager
@@ -95,3 +97,5 @@ app.include_router(chat_router, prefix="/api/ai")
 app.include_router(documents_router, prefix="/api/ai")
 app.include_router(recommendation_router, prefix="/api/ai")
 app.include_router(hospital_match_router, prefix="/api/ai")
+app.include_router(snapshot_router, prefix="/api/ai")
+app.include_router(clinical_intelligence_router, prefix="/api/ai")

@@ -3,8 +3,11 @@ import type { ApiResponse } from "@/types/api";
 import type {
   ChatMessage,
   ChatSession,
+  ClinicalIntelligence,
+  CopilotAnalyticsSummary,
   CreateSessionRequest,
   PatientDocument,
+  PatientSnapshot,
   SendMessageResponse,
 } from "@/features/copilot/types/copilot.types";
 
@@ -65,6 +68,44 @@ export const copilotService = {
 
     if (!data.success || !data.data) {
       throw new Error(data.message || "Failed to fetch documents");
+    }
+
+    return data.data;
+  },
+
+  async getPatientSnapshot(patientId: string): Promise<PatientSnapshot> {
+    const { data } = await api.get<ApiResponse<PatientSnapshot>>(
+      `/copilot/snapshot/${encodeURIComponent(patientId)}`,
+      { timeout: 120000 },
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to generate patient snapshot");
+    }
+
+    return data.data;
+  },
+
+  async getClinicalIntelligence(patientId: string): Promise<ClinicalIntelligence> {
+    const { data } = await api.get<ApiResponse<ClinicalIntelligence>>(
+      `/copilot/intelligence/${encodeURIComponent(patientId)}`,
+      { timeout: 120000 },
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to generate clinical intelligence");
+    }
+
+    return data.data;
+  },
+
+  async getAnalytics(): Promise<CopilotAnalyticsSummary> {
+    const { data } = await api.get<ApiResponse<CopilotAnalyticsSummary>>(
+      "/copilot/analytics",
+    );
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to fetch analytics");
     }
 
     return data.data;

@@ -51,6 +51,38 @@ export interface SendMessageResponse {
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
+export type UrgencyLevel = "Routine" | "Urgent" | "Emergency" | "Critical";
+
+export type TransferRecommendation =
+  | "Immediate Transfer"
+  | "Transfer within 2 hours"
+  | "Transfer within 24 hours"
+  | "No transfer required";
+
+export interface PatientSnapshot {
+  primaryDiagnosis: string;
+  riskLevel: RiskLevel;
+  medications: string[];
+  recommendedSpecialist: string;
+  urgency: string;
+  transferRecommendation: string;
+  confidence: number;
+  aiFindings: string[];
+  evidence: string[];
+  citations?: CopilotCitation[];
+}
+
+export interface ClinicalIntelligence extends PatientSnapshot {}
+
+export interface CopilotAnalyticsSummary {
+  totalSessions: number;
+  totalQuestions: number;
+  mostCommonDiagnoses: { diagnosis: string; count: number }[];
+  mostRecommendedSpecialists: { specialist: string; count: number }[];
+  averageConfidence: number;
+  referralConversions: number;
+}
+
 export interface PatientContext {
   patientId: string;
   patientName: string;
@@ -61,6 +93,12 @@ export interface PatientContext {
   hospital?: string;
   referralStatus?: string;
   referralId?: string;
+  urgency?: string;
+  transferRecommendation?: string;
+  recommendedSpecialist?: string;
+  medications?: string[];
+  aiConfidence?: number;
+  aiFindings?: string[];
 }
 
 export const QUICK_STARTERS = [

@@ -1,4 +1,4 @@
-import { useState, type RefObject } from "react";
+import { useState, type Ref } from "react";
 import { FileCheck, FileText } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -13,7 +13,7 @@ import { formatUploadDate } from "@/features/copilot/utils/copilotUtils";
 interface DocumentsPanelProps {
   documents: PatientDocument[];
   isLoading?: boolean;
-  panelRef?: RefObject<HTMLDivElement | null>;
+  panelRef?: Ref<HTMLDivElement>;
 }
 
 export function DocumentsPanel({ documents, isLoading, panelRef }: DocumentsPanelProps) {

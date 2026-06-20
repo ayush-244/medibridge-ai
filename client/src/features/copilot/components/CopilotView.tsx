@@ -1,25 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Menu, PanelRight, X } from "lucide-react";
+import { Menu, PanelRightOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CopilotHeader } from "@/features/copilot/components/CopilotHeader";
 import { CopilotSidebar } from "@/features/copilot/components/CopilotSidebar";
-import { CopilotInsightsPanel } from "@/features/copilot/components/CopilotInsightsPanel";
-import { PatientContextCard } from "@/features/copilot/components/PatientContextCard";
+import { PatientInsightsDrawer } from "@/features/copilot/components/PatientInsightsDrawer";
+import { PatientContextBar } from "@/features/copilot/components/PatientContextBar";
+import { PatientSnapshotCard } from "@/features/copilot/components/PatientSnapshotCard";
 import { CopilotEmptyState } from "@/features/copilot/components/CopilotEmptyState";
 import { ChatMessageList } from "@/features/copilot/components/ChatMessageList";
 import { ChatInput } from "@/features/copilot/components/ChatInput";
 import { useCopilotChat } from "@/features/copilot/hooks/useCopilotChat";
 import { useCopilotSessions } from "@/features/copilot/hooks/useCopilotSessions";
+import { usePatientSnapshot } from "@/features/copilot/hooks/usePatientSnapshot";
 import { copilotService } from "@/features/copilot/services/copilot.service";
-import type {
-  ChatSession,
-  PatientContext,
-} from "@/features/copilot/types/copilot.types";
-import { deriveRiskLevel } from "@/features/copilot/utils/copilotUtils";
+import type { ChatSession, PatientContext } from "@/features/copilot/types/copilot.types";
 import { referralService } from "@/features/referrals/services/referral.service";
 import type { Referral, ReferralHospital } from "@/features/referrals/types/referral.types";
 
@@ -28,22 +25,25 @@ function resolveHospitalName(hospital: ReferralHospital | string): string {
   return hospital.name;
 }
 
+const DEFAULT_PATIENT_ID = "PATIENT002";
+
 export function CopilotView() {
   const [searchParams, setSearchParams] = useSearchParams();
   const patientIdParam = searchParams.get("patient_id")?.trim() || "";
   const referralIdParam = searchParams.get("referral_id")?.trim() || "";
   const sessionIdParam = searchParams.get("session_id")?.trim() || "";
 
-  const [patientIdInput, setPatientIdInput] = useState(patientIdParam || "PATIENT002");
-  const [referralIdInput, setReferralIdInput] = useState(referralIdParam);
+  const [patientId, setPatientId] = useState(patientIdParam || DEFAULT_PATIENT_ID);
+  const [referralIdInput] = useState(referralIdParam);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(
     sessionIdParam || null,
   );
   const [activeSession, setActiveSession] = useState<ChatSession | null>(null);
   const [referral, setReferral] = useState<Referral | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const [mobileInsightsOpen, setMobileInsightsOpen] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
+  const [insightsOpen, setInsightsOpen] = useState(false);
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
   const { sessions, isLoading: sessionsLoading, refresh: refreshSessions } =
     useCopilotSessions();
@@ -60,13 +60,23 @@ export function CopilotView() {
     thinkingMessage,
     sendMessage,
     regenerateLast,
+    clearMessages,
   } = useCopilotChat({
     sessionId: activeSessionId,
     onSessionUpdated: handleSessionUpdated,
   });
 
   const effectivePatientId =
-    activeSession?.patientId || patientIdParam || patientIdInput;
+    activeSession?.patientId || patientIdParam || patientId;
+
+  const {
+    snapshot,
+    isLoading: snapshotLoading,
+    reset: resetSnapshot,
+  } = usePatientSnapshot({
+    patientId: effectivePatientId,
+    enabled: Boolean(effectivePatientId),
+  });
 
   useEffect(() => {
     if (!referralIdParam && !referralIdInput) return;
@@ -85,14 +95,10 @@ export function CopilotView() {
     if (!effectivePatientId) return null;
 
     const diagnosis =
+      snapshot?.primaryDiagnosis ||
       activeSession?.condition ||
       referral?.condition ||
       "Clinical records under review";
-
-    const riskLevel = deriveRiskLevel(
-      diagnosis,
-      messages.filter((msg) => msg.role === "assistant").at(-1)?.confidence,
-    );
 
     return {
       patientId: effectivePatientId,
@@ -100,19 +106,25 @@ export function CopilotView() {
         activeSession?.patientName ||
         referral?.patientName ||
         effectivePatientId,
-      age: referral?.age,
+      age: referral?.age ?? (effectivePatientId === "PATIENT002" ? 58 : undefined),
       gender: effectivePatientId === "PATIENT002" ? "Male" : undefined,
       diagnosis,
-      riskLevel,
+      riskLevel: snapshot?.riskLevel || "MEDIUM",
       hospital: referral ? resolveHospitalName(referral.toHospital) : "AIIMS Mangalagiri",
       referralStatus: referral?.status,
       referralId: referral?._id || referralIdParam || referralIdInput || undefined,
+      urgency: snapshot?.urgency,
+      transferRecommendation: snapshot?.transferRecommendation,
+      recommendedSpecialist: snapshot?.recommendedSpecialist,
+      medications: snapshot?.medications,
+      aiConfidence: snapshot?.confidence,
+      aiFindings: snapshot?.aiFindings,
     };
   }, [
     effectivePatientId,
+    snapshot,
     activeSession,
     referral,
-    messages,
     referralIdParam,
     referralIdInput,
   ]);
@@ -123,41 +135,50 @@ export function CopilotView() {
   );
 
   const updateUrl = useCallback(
-    (params: { patientId?: string; referralId?: string; sessionId?: string }) => {
+    (params: { patientId?: string; referralId?: string; sessionId?: string | null }) => {
       const next = new URLSearchParams(searchParams);
 
       if (params.patientId) next.set("patient_id", params.patientId);
       if (params.referralId) next.set("referral_id", params.referralId);
-      if (params.sessionId) next.set("session_id", params.sessionId);
+
+      if (params.sessionId === null) {
+        next.delete("session_id");
+      } else if (params.sessionId) {
+        next.set("session_id", params.sessionId);
+      }
 
       setSearchParams(next, { replace: true });
     },
     [searchParams, setSearchParams],
   );
 
+  const focusInput = useCallback(() => {
+    setTimeout(() => chatInputRef.current?.focus(), 50);
+  }, []);
+
   const ensureSession = useCallback(async (): Promise<string | null> => {
     if (activeSessionId) return activeSessionId;
 
-    const patientId = patientIdInput.trim();
-    if (!patientId) {
+    const resolvedPatientId = patientId.trim();
+    if (!resolvedPatientId) {
       toast.error("Enter a patient ID to start.");
       return null;
     }
 
-    setIsStarting(true);
+    setIsCreatingSession(true);
 
     try {
       const session = await copilotService.createSession({
-        patientId,
+        patientId: resolvedPatientId,
         referralId: referralIdInput || undefined,
         patientName: referral?.patientName,
-        condition: referral?.condition,
+        condition: snapshot?.primaryDiagnosis || referral?.condition,
       });
 
       setActiveSessionId(session._id);
       setActiveSession(session);
       updateUrl({
-        patientId,
+        patientId: resolvedPatientId,
         referralId: referralIdInput || undefined,
         sessionId: session._id,
       });
@@ -167,13 +188,14 @@ export function CopilotView() {
       toast.error(err instanceof Error ? err.message : "Failed to start session");
       return null;
     } finally {
-      setIsStarting(false);
+      setIsCreatingSession(false);
     }
   }, [
     activeSessionId,
-    patientIdInput,
+    patientId,
     referralIdInput,
     referral,
+    snapshot,
     updateUrl,
     refreshSessions,
   ]);
@@ -210,7 +232,8 @@ export function CopilotView() {
       setActiveSessionId(sessionId);
       setActiveSession(session || null);
       if (session) {
-        setPatientIdInput(session.patientId);
+        setPatientId(session.patientId);
+        resetSnapshot();
         updateUrl({
           patientId: session.patientId,
           referralId: session.referralId,
@@ -219,128 +242,109 @@ export function CopilotView() {
       }
       setMobileSidebarOpen(false);
     },
-    [sessions, updateUrl],
+    [sessions, updateUrl, resetSnapshot],
   );
 
-  const handleStartPatient = async (event: React.FormEvent) => {
-    event.preventDefault();
-    await ensureSession();
-  };
-
-  const handleNewSession = () => {
+  const handleNewSession = useCallback(() => {
     setActiveSessionId(null);
     setActiveSession(null);
-    const next = new URLSearchParams(searchParams);
-    next.delete("session_id");
-    setSearchParams(next, { replace: true });
-  };
+    clearMessages();
+    updateUrl({ patientId, sessionId: null });
+    focusInput();
+  }, [clearMessages, updateUrl, patientId, focusInput]);
+
+  const handlePatientChange = useCallback(
+    (nextPatientId: string) => {
+      setPatientId(nextPatientId);
+      setActiveSessionId(null);
+      setActiveSession(null);
+      clearMessages();
+      resetSnapshot();
+      updateUrl({ patientId: nextPatientId, sessionId: null });
+    },
+    [clearMessages, resetSnapshot, updateUrl],
+  );
 
   const hasMessages = messages.length > 0;
   const showEmptyState = !hasMessages && !messagesLoading && !isSending;
-  const chatDisabled = isSending || isStarting || !effectivePatientId;
+  const chatDisabled = isSending || isCreatingSession || !effectivePatientId;
+
+  const snapshotCard = (
+    <PatientSnapshotCard
+      snapshot={snapshot}
+      isLoading={snapshotLoading}
+      patientId={effectivePatientId}
+      referralId={patientContext?.referralId}
+    />
+  );
+
+  const sidebarProps = {
+    sessions,
+    activeSessionId,
+    patientId,
+    isLoading: sessionsLoading,
+    onSelectSession: handleSelectSession,
+    onNewSession: handleNewSession,
+    onQuickAction: (question: string) => void handleAsk(question),
+    onPatientChange: handlePatientChange,
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex h-[calc(100vh-theme(spacing.navbar))] flex-col overflow-hidden bg-gradient-to-br from-slate-50 via-white to-sky-50/30"
+      className="flex h-[calc(100dvh-theme(spacing.navbar))] flex-col overflow-hidden bg-gradient-to-br from-slate-50/80 via-white to-sky-50/40"
     >
-      <CopilotHeader patientContext={patientContext} aiReady={!isSending} />
+      <CopilotHeader
+        patientContext={patientContext}
+        aiReady={!isSending && !snapshotLoading}
+        onOpenInsights={() => setInsightsOpen(true)}
+      />
 
-      {!activeSessionId && (
-        <form
-          onSubmit={(event) => void handleStartPatient(event)}
-          className="flex flex-wrap items-end gap-3 border-b border-border/40 bg-white/70 px-4 py-3 backdrop-blur-sm"
-        >
-          <div className="min-w-[160px] flex-1 space-y-1">
-            <label htmlFor="copilot-patient-id" className="text-xs font-medium text-text-secondary">
-              Patient ID
-            </label>
-            <Input
-              id="copilot-patient-id"
-              value={patientIdInput}
-              onChange={(event) => setPatientIdInput(event.target.value)}
-              placeholder="e.g. PATIENT002"
-              required
-            />
-          </div>
-          <div className="min-w-[160px] flex-1 space-y-1">
-            <label htmlFor="copilot-referral-id" className="text-xs font-medium text-text-secondary">
-              Referral ID (optional)
-            </label>
-            <Input
-              id="copilot-referral-id"
-              value={referralIdInput}
-              onChange={(event) => setReferralIdInput(event.target.value)}
-              placeholder="Link to referral workflow"
-            />
-          </div>
-          <Button type="submit" disabled={isStarting}>
-            Start Session
-          </Button>
-        </form>
-      )}
+      {patientContext && <PatientContextBar context={patientContext} />}
 
-      {patientContext && <PatientContextCard context={patientContext} />}
-
-      <div className="relative flex min-h-0 flex-1">
-        <div className="hidden lg:block">
-          <CopilotSidebar
-            sessions={sessions}
-            activeSessionId={activeSessionId}
-            isLoading={sessionsLoading}
-            onSelectSession={handleSelectSession}
-            onNewSession={handleNewSession}
-            onQuickAction={(question) => void handleAsk(question)}
-          />
+      <div className="flex min-h-0 flex-1">
+        <div className="hidden min-h-0 lg:flex">
+          <CopilotSidebar {...sidebarProps} />
         </div>
 
         {mobileSidebarOpen && (
-          <div className="absolute inset-y-0 left-0 z-30 lg:hidden">
+          <div className="fixed inset-0 z-40 lg:hidden">
             <div
-              className="absolute inset-0 bg-black/20"
+              className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"
               onClick={() => setMobileSidebarOpen(false)}
             />
-            <CopilotSidebar
-              sessions={sessions}
-              activeSessionId={activeSessionId}
-              isLoading={sessionsLoading}
-              onSelectSession={handleSelectSession}
-              onNewSession={handleNewSession}
-              onQuickAction={(question) => void handleAsk(question)}
-            />
+            <div className="absolute inset-y-0 left-0 w-[85%] max-w-xs shadow-2xl">
+              <CopilotSidebar {...sidebarProps} />
+            </div>
           </div>
         )}
 
-        <main className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-center justify-between border-b border-border/40 px-3 py-2 lg:hidden">
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col lg:w-[80%]">
+          <div className="flex shrink-0 items-center justify-between border-b border-white/40 px-3 py-2 lg:hidden">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setMobileSidebarOpen(true)}
-              aria-label="Open conversations"
+              aria-label="Open sidebar"
             >
               <Menu className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium text-text-primary">
+            <span className="truncate text-xs font-medium text-text-primary">
               {patientContext?.patientId || "Clinical Copilot"}
             </span>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setMobileInsightsOpen((prev) => !prev)}
-              aria-label="Toggle insights"
+              onClick={() => setInsightsOpen(true)}
+              aria-label="Open insights"
             >
-              {mobileInsightsOpen ? (
-                <X className="h-4 w-4" />
-              ) : (
-                <PanelRight className="h-4 w-4" />
-              )}
+              <PanelRightOpen className="h-4 w-4" />
             </Button>
           </div>
 
           {chatError && (
-            <div className="mx-4 mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700">
+            <div className="mx-4 mt-2 shrink-0 rounded-lg border border-red-200/80 bg-red-50/90 px-3 py-2 text-sm text-red-700">
               {chatError}
             </div>
           )}
@@ -349,6 +353,7 @@ export function CopilotView() {
             <CopilotEmptyState
               onQuickStart={(question) => void handleAsk(question)}
               disabled={chatDisabled}
+              snapshotContent={snapshotCard}
             />
           ) : (
             <ChatMessageList
@@ -359,36 +364,25 @@ export function CopilotView() {
               thinkingMessage={thinkingMessage}
               onSuggestedQuestion={(question) => void handleAsk(question)}
               onRegenerate={() => void regenerateLast()}
+              headerContent={snapshotCard}
             />
           )}
 
           <ChatInput
+            inputRef={chatInputRef}
             onSend={(question) => void handleAsk(question)}
             disabled={chatDisabled}
           />
         </main>
-
-        <CopilotInsightsPanel
-          patientContext={patientContext}
-          latestAssistantMessage={latestAssistantMessage}
-        />
-
-        {mobileInsightsOpen && (
-          <div className="absolute inset-y-0 right-0 z-30 w-full max-w-sm xl:hidden">
-            <div
-              className="absolute inset-0 bg-black/20"
-              onClick={() => setMobileInsightsOpen(false)}
-            />
-            <div className="relative h-full bg-white shadow-xl">
-              <CopilotInsightsPanel
-                patientContext={patientContext}
-                latestAssistantMessage={latestAssistantMessage}
-                forceVisible
-              />
-            </div>
-          </div>
-        )}
       </div>
+
+      <PatientInsightsDrawer
+        open={insightsOpen}
+        onOpenChange={setInsightsOpen}
+        patientContext={patientContext}
+        snapshot={snapshot}
+        latestAssistantMessage={latestAssistantMessage}
+      />
     </motion.div>
   );
 }

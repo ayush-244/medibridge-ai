@@ -72,6 +72,17 @@ export function getRiskBadgeClass(level: RiskLevel): string {
   }
 }
 
+export function getUrgencyBadgeClass(urgency: string): string {
+  const normalized = urgency.toLowerCase();
+  if (normalized.includes("critical") || normalized.includes("emergency")) {
+    return "bg-red-50 text-red-700 border-red-200";
+  }
+  if (normalized.includes("urgent")) {
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  }
+  return "bg-sky-50 text-sky-700 border-sky-200";
+}
+
 export function formatMessageTime(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

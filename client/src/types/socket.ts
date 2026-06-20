@@ -25,6 +25,8 @@ export const SOCKET_EVENTS = {
   COPILOT_SESSION_STARTED: "copilotSessionStarted",
   COPILOT_QUESTION_ASKED: "copilotQuestionAsked",
   COPILOT_RESPONSE_GENERATED: "copilotResponseGenerated",
+  PATIENT_SNAPSHOT_GENERATED: "patientSnapshotGenerated",
+  RISK_ANALYSIS_GENERATED: "riskAnalysisGenerated",
 } as const;
 
 export type SocketEventName =
@@ -88,12 +90,16 @@ export interface ReservationActionPayload {
 }
 
 export interface CopilotEventPayload {
-  sessionId: string;
+  sessionId?: string;
   patientId: string;
   patientName?: string;
   question?: string;
   confidence?: number;
   userId?: string;
+  diagnosis?: string;
+  riskLevel?: string;
+  urgency?: string;
+  specialist?: string;
 }
 
 export interface SocketEventPayloadMap {
@@ -114,6 +120,8 @@ export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.COPILOT_SESSION_STARTED]: CopilotEventPayload;
   [SOCKET_EVENTS.COPILOT_QUESTION_ASKED]: CopilotEventPayload;
   [SOCKET_EVENTS.COPILOT_RESPONSE_GENERATED]: CopilotEventPayload;
+  [SOCKET_EVENTS.PATIENT_SNAPSHOT_GENERATED]: CopilotEventPayload;
+  [SOCKET_EVENTS.RISK_ANALYSIS_GENERATED]: CopilotEventPayload;
 }
 
 export interface SocketLastEvent {

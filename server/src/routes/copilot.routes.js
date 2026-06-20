@@ -7,6 +7,9 @@ const {
   createSession,
   sendMessage,
   getDocuments,
+  getPatientSnapshot,
+  getClinicalIntelligence,
+  getAnalytics,
 } = require("../controllers/copilot.controller");
 
 const authenticateUser = require("../middleware/auth.middleware");
@@ -47,6 +50,27 @@ router.get(
   authenticateUser,
   authorize(...COPILOT_ROLES),
   getDocuments,
+);
+
+router.get(
+  "/snapshot/:patientId",
+  authenticateUser,
+  authorize(...COPILOT_ROLES),
+  getPatientSnapshot,
+);
+
+router.get(
+  "/intelligence/:patientId",
+  authenticateUser,
+  authorize(...COPILOT_ROLES),
+  getClinicalIntelligence,
+);
+
+router.get(
+  "/analytics",
+  authenticateUser,
+  authorize(...COPILOT_ROLES),
+  getAnalytics,
 );
 
 module.exports = router;

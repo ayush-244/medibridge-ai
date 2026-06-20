@@ -7,10 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import type { ChatMessage } from "@/features/copilot/types/copilot.types";
 import {
   formatMessageTime,
-  getRiskBadgeClass,
 } from "@/features/copilot/utils/copilotUtils";
 import { SuggestedQuestions } from "@/features/copilot/components/SuggestedQuestions";
-import { SmartActions } from "@/features/copilot/components/SmartActions";
 import { cn } from "@/lib/utils";
 
 interface ChatMessageBubbleProps {
@@ -24,8 +22,6 @@ interface ChatMessageBubbleProps {
 
 export function ChatMessageBubble({
   message,
-  patientId,
-  referralId,
   onSuggestedQuestion,
   onRegenerate,
   isLatestAssistant,
@@ -202,10 +198,6 @@ export function ChatMessageBubble({
             questions={message.suggestedQuestions}
             onSelect={onSuggestedQuestion}
           />
-        )}
-
-        {!isUser && isLatestAssistant && (
-          <SmartActions patientId={patientId} referralId={referralId} />
         )}
       </div>
     </motion.div>
