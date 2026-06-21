@@ -336,6 +336,14 @@ export function AiSuggestionPanel({
             </div>
           )}
 
+          {hospitals && hospitals.recommendedHospitals.length === 0 && (
+            <div className="rounded-lg border border-border p-3">
+              <p className="text-xs text-text-secondary">
+                No hospitals found with an available {hospitals.specialist} specialist nearby. Try a different diagnosis or upload a clinical document.
+              </p>
+            </div>
+          )}
+
           {(specialist || hospitals) && (
             <Button
               type="button"

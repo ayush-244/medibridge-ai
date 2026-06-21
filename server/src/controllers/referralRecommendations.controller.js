@@ -250,19 +250,10 @@ const uploadReferralDocument = async (req, res) => {
     return res.status(200).json(result);
   } catch (error) {
     console.error("[referralRecommendations] document upload error:", error?.message || error);
-    console.error("[diag] getAiHospitals catch block:");
-    console.error("[diag]   message:", error?.message);
-    if (error?.response) {
-      console.error("[diag]   status:", error.response.status);
-      console.error("[diag]   response data:", JSON.stringify(error.response.data));
-    } else if (error?.request) {
-      console.error("[diag]   no response received (network/timeout)");
-    }
-    console.error("[diag]   stack:", error?.stack?.split("\n").slice(0, 4).join("\n"));
 
     return res.status(500).json({
       success: false,
-      message: "Failed to generate hospital recommendations",
+      message: "Failed to upload document",
     });
   }
 };
@@ -351,16 +342,11 @@ const getAiHospitals = async (req, res) => {
       origin_hospital_id: originHospitalId,
     };
 
-    console.log("[diag] getAiHospitals payload:", JSON.stringify(payload));
-
     const aiResponse = await axios.post(
       `${AI_SERVICE_URL}/api/ai/hospital-match`,
       payload,
       { timeout: 90000 },
     );
-
-    console.log("[diag] AI response status:", aiResponse.status);
-    console.log("[diag] AI response data:", JSON.stringify(aiResponse.data).slice(0, 500));
 
     const aiData = aiResponse.data;
 
