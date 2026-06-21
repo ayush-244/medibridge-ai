@@ -1,5 +1,6 @@
-from typing import List, Dict
+from typing import Any, Dict, List, Optional
 
+from app.core.logger import logger
 from app.services.recommendation_service import recommend_specialist
 from app.services.hospital_scoring_service import calculate_hospital_score
 
@@ -31,21 +32,39 @@ def match_hospitals(
 ) -> Dict:
 
     # STEP 1
-    specialist_result = recommend_specialist(patient_id)
+    referral_context = {
+        "patientName": referral_data.get("patientName"),
+        "age": referral_data.get("age"),
+        "condition": referral_data.get("condition"),
+    }
+    logger.info("[diag] match_hospitals step1: calling recommend_specialist patient_id=%s context=%s", patient_id, referral_context)
+    specialist_result = recommend_specialist(
+        patient_id,
+        referral_context=referral_context,
+    )
+
+    logger.info(
+        "Hospital match specialist source=%s for patientId=%s",
+        specialist_result.get("source", "unknown"),
+        patient_id,
+    )
 
     specialist = specialist_result["specialist"]
 
     # STEP 2
     origin_hospital = referral_data["fromHospital"]
+    logger.info("[diag] match_hospitals step2: origin_hospital keys=%s location=%s", list(origin_hospital.keys()), origin_hospital.get("location"))
 
     origin_hospital_id = origin_hospital["_id"]
 
     origin_lat = origin_hospital["location"]["latitude"]
     origin_lon = origin_hospital["location"]["longitude"]
+    logger.info("[diag] match_hospitals step2: origin_lat=%s origin_lon=%s", origin_lat, origin_lon)
 
     hospitals = matching_data["hospitals"]
     doctors = matching_data["doctors"]
     reservations = matching_data["reservations"]
+    logger.info("[diag] match_hospitals step2: hospitals=%d, doctors=%d, reservations=%d", len(hospitals), len(doctors), len(reservations))
 
     # STEP 3
     active_reservations = {}
@@ -68,6 +87,8 @@ def match_hospitals(
         )
 
     recommended_hospitals = []
+
+    logger.info("[diag] match_hospitals step4: starting hospital loop over %d hospitals", len(hospitals))
 
     # STEP 4
     for hospital in hospitals:
@@ -181,17 +202,43 @@ from app.services.medibridge_api_service import (
 def generate_hospital_match(
     patient_id: str,
     referral_id: str,
+    origin_hospital_id: Optional[str] = None,
 ):
-    referral_response = get_referral_data(
-        referral_id
-    )
+    logger.info("[diag] generate_hospital_match start: patient_id=%s referral_id=%s origin_hospital_id=%s", patient_id, referral_id, origin_hospital_id)
 
     matching_response = get_matching_data()
+    logger.info("[diag] get_matching_data keys=%s hospitals=%d doctors=%d reservations=%d", list(matching_response.keys()), len(matching_response.get("hospitals", [])), len(matching_response.get("doctors", [])), len(matching_response.get("reservations", [])))
 
-    referral_data = referral_response["data"]
+    if origin_hospital_id:
+        hospitals = matching_response.get("hospitals", [])
+        matching_ids = [h.get("_id") for h in hospitals]
+        logger.info("[diag] origin_hospital_id=%s matching hospital _ids (first 5)=%s", origin_hospital_id, matching_ids[:5])
 
-    return match_hospitals(
+        origin_hospital = next(
+            (h for h in hospitals if h["_id"] == origin_hospital_id),
+            None,
+        )
+        logger.info("[diag] origin_hospital found=%s", origin_hospital is not None)
+        if not origin_hospital:
+            raise ValueError(
+                f"Origin hospital {origin_hospital_id} not found in matching data"
+            )
+        referral_data = {
+            "_id": origin_hospital_id,
+            "patientName": "",
+            "age": 0,
+            "condition": "",
+            "fromHospital": origin_hospital,
+        }
+    else:
+        referral_response = get_referral_data(referral_id)
+        referral_data = referral_response["data"]
+
+    logger.info("[diag] calling match_hospitals...")
+    result = match_hospitals(
         patient_id=patient_id,
         referral_data=referral_data,
         matching_data=matching_response,
     )
+    logger.info("[diag] match_hospitals returned: specialist=%s hospitals=%d", result.get("specialist"), len(result.get("recommendedHospitals", [])))
+    return result

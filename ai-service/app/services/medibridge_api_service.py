@@ -1,6 +1,8 @@
+import os
+
 import requests
 
-NODE_API_BASE_URL = "http://localhost:5000/api"
+NODE_API_BASE_URL = os.getenv("NODE_API_BASE_URL", "http://localhost:5000/api")
 
 def get_matching_data():
     response = requests.get(

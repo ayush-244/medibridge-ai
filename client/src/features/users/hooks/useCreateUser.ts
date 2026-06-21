@@ -3,7 +3,6 @@ import { userService } from "@/features/users/services/user.service";
 import type {
   CreateUserPayload,
   CreateUserResult,
-  User,
 } from "@/features/users/types/user.types";
 import { showErrorToast, showSuccessToast } from "@/lib/toast";
 

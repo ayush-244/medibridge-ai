@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { recommendationService } from "@/services/recommendation.service";
+import { referralRecommendationsService } from "@/features/referrals/services/referralRecommendations.service";
 import type { HospitalMatchResult } from "@/types/recommendation.types";
 
 interface UseHospitalMatchingOptions {
-  patientId: string | null;
   referralId: string | null;
   enabled?: boolean;
 }
@@ -16,7 +15,6 @@ interface UseHospitalMatchingReturn {
 }
 
 export function useHospitalMatching({
-  patientId,
   referralId,
   enabled = true,
 }: UseHospitalMatchingOptions): UseHospitalMatchingReturn {
@@ -25,8 +23,8 @@ export function useHospitalMatching({
   const [error, setError] = useState<string | null>(null);
 
   const fetchRecommendations = useCallback(async () => {
-    if (!patientId || !referralId) {
-      setError("Patient ID and Referral ID are required.");
+    if (!referralId) {
+      setError("Referral ID is required.");
       setData(null);
       return;
     }
@@ -35,10 +33,9 @@ export function useHospitalMatching({
     setError(null);
 
     try {
-      const result = await recommendationService.matchHospitals({
-        patient_id: patientId,
-        referral_id: referralId,
-      });
+      const result = await referralRecommendationsService.generateHospitalRecommendations(
+        referralId,
+      );
       setData(result);
     } catch (err) {
       const message =
@@ -49,13 +46,13 @@ export function useHospitalMatching({
     } finally {
       setIsLoading(false);
     }
-  }, [patientId, referralId]);
+  }, [referralId]);
 
   useEffect(() => {
-    if (enabled && patientId && referralId) {
+    if (enabled && referralId) {
       void fetchRecommendations();
     }
-  }, [enabled, patientId, referralId, fetchRecommendations]);
+  }, [enabled, referralId, fetchRecommendations]);
 
   return {
     data,

@@ -210,7 +210,6 @@ export function PatientInsightsDrawer({
                       )}
 
                       <SmartActions
-                        patientId={patientContext.patientId}
                         referralId={patientContext.referralId}
                         variant="drawer"
                       />

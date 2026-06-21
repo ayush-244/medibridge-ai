@@ -26,16 +26,18 @@ import {
   type CreateReferralFormErrors,
   type CreateReferralFormValues,
 } from "@/features/referrals/types/referral.types";
-import {
-  getInitialReferralFormValues,
-  validateReferralForm,
-} from "@/features/referrals/utils/referralUtils";
+import { validateReferralForm } from "@/features/referrals/utils/referralUtils";
 
 interface ReferralFormProps {
   hospitals: Hospital[];
   doctors: Doctor[];
   defaultFromHospitalId?: string | null;
   isSubmitting: boolean;
+  values: CreateReferralFormValues;
+  onUpdateField: <K extends keyof CreateReferralFormValues>(
+    field: K,
+    value: CreateReferralFormValues[K],
+  ) => void;
   onSubmit: (values: CreateReferralFormValues) => void;
   onCancel: () => void;
 }
@@ -78,26 +80,12 @@ export function ReferralForm({
   doctors,
   defaultFromHospitalId,
   isSubmitting,
+  values,
+  onUpdateField,
   onSubmit,
   onCancel,
 }: ReferralFormProps) {
-  const [values, setValues] = useState<CreateReferralFormValues>(() =>
-    getInitialReferralFormValues(defaultFromHospitalId),
-  );
   const [errors, setErrors] = useState<CreateReferralFormErrors>({});
-
-  const updateField = <K extends keyof CreateReferralFormValues>(
-    field: K,
-    value: CreateReferralFormValues[K],
-  ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      if (!prev[field]) return prev;
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -110,6 +98,19 @@ export function ReferralForm({
     }
 
     onSubmit(values);
+  };
+
+  const handleUpdateField = <K extends keyof CreateReferralFormValues>(
+    field: K,
+    value: CreateReferralFormValues[K],
+  ) => {
+    onUpdateField(field, value);
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   const lockSourceHospital = Boolean(defaultFromHospitalId);
@@ -130,7 +131,7 @@ export function ReferralForm({
               id="patientName"
               value={values.patientName}
               onChange={(event) =>
-                updateField("patientName", event.target.value)
+                handleUpdateField("patientName", event.target.value)
               }
               placeholder="Enter patient name"
             />
@@ -142,7 +143,8 @@ export function ReferralForm({
               type="number"
               min={1}
               value={values.age}
-              onChange={(event) => updateField("age", event.target.value)}
+              onChange={(event) =>
+                handleUpdateField("age", event.target.value)}
               placeholder="Enter age"
             />
           </FormField>
@@ -152,7 +154,7 @@ export function ReferralForm({
               id="gender"
               value={values.gender}
               onChange={(event) =>
-                updateField(
+                handleUpdateField(
                   "gender",
                   event.target.value as CreateReferralFormValues["gender"],
                 )
@@ -182,7 +184,7 @@ export function ReferralForm({
             <Input
               id="diagnosis"
               value={values.diagnosis}
-              onChange={(event) => updateField("diagnosis", event.target.value)}
+              onChange={(event) => handleUpdateField("diagnosis", event.target.value)}
               placeholder="Primary diagnosis"
             />
           </FormField>
@@ -196,7 +198,7 @@ export function ReferralForm({
               id="conditionSummary"
               value={values.conditionSummary}
               onChange={(event) =>
-                updateField("conditionSummary", event.target.value)
+                handleUpdateField("conditionSummary", event.target.value)
               }
               placeholder="Brief summary of the patient's condition"
             />
@@ -207,7 +209,7 @@ export function ReferralForm({
               id="priority"
               value={values.priority}
               onChange={(event) =>
-                updateField(
+                handleUpdateField(
                   "priority",
                   event.target.value as CreateReferralFormValues["priority"],
                 )
@@ -239,7 +241,7 @@ export function ReferralForm({
               value={values.fromHospital}
               disabled={lockSourceHospital}
               onChange={(event) =>
-                updateField("fromHospital", event.target.value)
+                handleUpdateField("fromHospital", event.target.value)
               }
             >
               <option value="">Select source hospital</option>
@@ -263,7 +265,7 @@ export function ReferralForm({
               value={values.toHospital}
               requiredSpecialty={values.requiredSpecialty}
               error={errors.toHospital}
-              onChange={(hospitalId) => updateField("toHospital", hospitalId)}
+              onChange={(hospitalId) => handleUpdateField("toHospital", hospitalId)}
             />
           </FormField>
 
@@ -275,7 +277,7 @@ export function ReferralForm({
             <Select
               value={values.requiredSpecialty}
               onValueChange={(specialty) =>
-                updateField("requiredSpecialty", specialty)
+                handleUpdateField("requiredSpecialty", specialty)
               }
             >
               <SelectTrigger id="requiredSpecialty">
@@ -296,7 +298,7 @@ export function ReferralForm({
               <Textarea
                 id="notes"
                 value={values.notes}
-                onChange={(event) => updateField("notes", event.target.value)}
+                onChange={(event) => handleUpdateField("notes", event.target.value)}
                 placeholder="Additional referral notes"
               />
             </FormField>

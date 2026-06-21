@@ -18,15 +18,11 @@ import { SmartActions } from "@/features/copilot/components/SmartActions";
 interface PatientSnapshotCardProps {
   snapshot: PatientSnapshot | null;
   isLoading?: boolean;
-  patientId: string;
-  referralId?: string;
 }
 
 export function PatientSnapshotCard({
   snapshot,
   isLoading,
-  patientId,
-  referralId,
 }: PatientSnapshotCardProps) {
   if (isLoading) {
     return (
@@ -126,8 +122,6 @@ export function PatientSnapshotCard({
 
       <div className="border-t border-primary/10 bg-white/40 px-5 py-3">
         <SmartActions
-          patientId={patientId}
-          referralId={referralId}
           variant="snapshot"
         />
       </div>

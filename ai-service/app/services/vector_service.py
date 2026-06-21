@@ -137,6 +137,59 @@ def query_document_chunks(
     return chunks
 
 
+def reassign_patient_documents(
+    from_patient_id: str,
+    to_patient_id: str,
+    settings: Optional[Settings] = None,
+) -> int:
+    config = settings or get_settings()
+
+    try:
+        collection = _get_collection(config)
+        results = collection.get(
+            where={"patientId": from_patient_id},
+            include=["metadatas"],
+        )
+
+        ids = results.get("ids") or []
+        metadatas = results.get("metadatas") or []
+
+        if not ids:
+            logger.info(
+                "No documents found for from_patient_id=%s",
+                from_patient_id,
+            )
+            return 0
+
+        updated_metadatas = []
+        for metadata in metadatas:
+            if metadata:
+                metadata["patientId"] = to_patient_id
+            updated_metadatas.append(metadata)
+
+        collection.update(
+            ids=ids,
+            metadatas=updated_metadatas,
+        )
+
+        logger.info(
+            "Reassigned %d documents from patientId=%s to patientId=%s",
+            len(ids),
+            from_patient_id,
+            to_patient_id,
+        )
+
+        return len(ids)
+    except Exception as exc:
+        logger.error(
+            "Failed to reassign documents from patientId=%s to patientId=%s: %s",
+            from_patient_id,
+            to_patient_id,
+            exc,
+        )
+        raise VectorStoreError(f"Failed to reassign documents: {exc}") from exc
+
+
 def list_patient_documents(
     patient_id: str,
     settings: Optional[Settings] = None,

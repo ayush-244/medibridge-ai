@@ -346,6 +346,7 @@ export function ReferralsView() {
         actionLoading={actionLoading}
         onOpenChange={handleDrawerChange}
         onAction={handleActionRequest}
+        userHospitalId={user?.hospital}
       />
 
       <ReferralConfirmDialog

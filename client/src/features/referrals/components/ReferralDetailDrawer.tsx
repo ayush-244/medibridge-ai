@@ -16,12 +16,12 @@ import { ReferralDrawerSkeleton } from "@/features/referrals/components/Referral
 import { ReferralTimeline } from "@/features/referrals/components/ReferralTimeline";
 import { ReferralRouteMap } from "@/features/maps/components/ReferralRouteMap";
 import { SpecialistRecommendationCard } from "@/features/ai-recommendations";
+import { DocumentUploadSection } from "@/features/referrals/components/DocumentUploadSection";
+import { HospitalRecommendationSection } from "@/features/referrals/components/HospitalRecommendationSection";
 import { useReferralReservation } from "@/features/referrals/hooks/useReferralReservation";
 import { getReferralPriority } from "@/features/referrals/utils/severity";
 import {
-  canAcceptReferral,
   canCompleteReferral,
-  canRejectReferral,
   formatReferralDate,
   getHospitalCity,
   getHospitalLocation,
@@ -47,12 +47,14 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
+
 interface ReferralDetailDrawerProps {
   referral: Referral | null;
   open: boolean;
   actionLoading: ReferralAction | null;
   onOpenChange: (open: boolean) => void;
   onAction: (action: ReferralAction) => void;
+  userHospitalId?: string | null;
 }
 
 export function ReferralDetailDrawer({
@@ -61,6 +63,7 @@ export function ReferralDetailDrawer({
   actionLoading,
   onOpenChange,
   onAction,
+  userHospitalId,
 }: ReferralDetailDrawerProps) {
   const { reservation, isLoading: reservationLoading } =
     useReferralReservation(referral?._id ?? null, open && !!referral);
@@ -84,6 +87,17 @@ export function ReferralDetailDrawer({
     typeof referral.requestedBy === "string"
       ? referral.requestedBy
       : referral.requestedBy.name;
+
+  const destinationHospitalId =
+    typeof referral.toHospital === "string"
+      ? referral.toHospital
+      : referral.toHospital._id;
+
+  const isDestinationHospital =
+    !!userHospitalId && userHospitalId === destinationHospitalId;
+
+  const canRespondToReferral =
+    isDestinationHospital && referral.status === "PENDING";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -111,7 +125,12 @@ export function ReferralDetailDrawer({
           </div>
 
           <SpecialistRecommendationCard
-            patientId={referral._id}
+            referralId={referral._id}
+            enabled={open}
+          />
+
+          <HospitalRecommendationSection
+            referralId={referral._id}
             enabled={open}
           />
 
@@ -177,11 +196,21 @@ export function ReferralDetailDrawer({
             </div>
           </div>
 
+          <DocumentUploadSection
+            referralId={referral._id}
+            onUploadComplete={() => {
+              const event = new CustomEvent("referral-doc-uploaded", {
+                detail: { referralId: referral._id },
+              });
+              window.dispatchEvent(event);
+            }}
+          />
+
           <ReferralPriorityBadge priority={priority} />
         </SheetBody>
 
         <div className="border-t border-border p-6 space-y-2">
-          {canAcceptReferral(referral.status) && (
+          {canRespondToReferral && (
             <Button
               className="w-full gap-2"
               onClick={() => onAction("accept")}
@@ -193,7 +222,7 @@ export function ReferralDetailDrawer({
               Accept Referral
             </Button>
           )}
-          {canRejectReferral(referral.status) && (
+          {canRespondToReferral && (
             <Button
               variant="danger"
               className="w-full gap-2"

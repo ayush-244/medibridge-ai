@@ -102,6 +102,43 @@ export interface CopilotEventPayload {
   specialist?: string;
 }
 
+export interface HospitalRegisteredPayload {
+  hospitalId: string;
+  hospitalName: string;
+  adminUserId: string;
+}
+
+export interface HospitalApprovalPayload {
+  hospitalId: string;
+  hospitalName: string;
+  adminUserId: string;
+}
+
+export interface HospitalAdminEventPayload {
+  userId: string;
+  name: string;
+  hospitalId: string;
+}
+
+export interface DoctorRegisteredPayload {
+  doctorId: string;
+  doctorName: string;
+  hospitalId: string;
+  userId: string;
+}
+
+export interface DoctorApprovalPayload {
+  doctorId: string;
+  doctorName: string;
+  userId?: string;
+}
+
+export interface PasswordChangedPayload {
+  userId: string;
+  name: string;
+  firstLogin: boolean;
+}
+
 export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.NOTIFICATION_CREATED]: NotificationCreatedPayload;
   [SOCKET_EVENTS.REFERRAL_ACCEPTED]: ReferralAcceptedPayload;
@@ -117,6 +154,15 @@ export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.RESERVATION_EXTENDED]: ReservationActionPayload;
   [SOCKET_EVENTS.RESERVATION_CANCELLED]: ReservationActionPayload;
   [SOCKET_EVENTS.PATIENT_ARRIVED]: ReservationActionPayload;
+  [SOCKET_EVENTS.HOSPITAL_REGISTERED]: HospitalRegisteredPayload;
+  [SOCKET_EVENTS.HOSPITAL_APPROVED]: HospitalApprovalPayload;
+  [SOCKET_EVENTS.HOSPITAL_REJECTED]: HospitalApprovalPayload;
+  [SOCKET_EVENTS.HOSPITAL_ADMIN_APPROVED]: HospitalAdminEventPayload;
+  [SOCKET_EVENTS.HOSPITAL_ADMIN_REJECTED]: HospitalAdminEventPayload;
+  [SOCKET_EVENTS.DOCTOR_REGISTERED]: DoctorRegisteredPayload;
+  [SOCKET_EVENTS.DOCTOR_APPROVED]: DoctorApprovalPayload;
+  [SOCKET_EVENTS.DOCTOR_REJECTED]: DoctorApprovalPayload;
+  [SOCKET_EVENTS.PASSWORD_CHANGED]: PasswordChangedPayload;
   [SOCKET_EVENTS.COPILOT_SESSION_STARTED]: CopilotEventPayload;
   [SOCKET_EVENTS.COPILOT_QUESTION_ASKED]: CopilotEventPayload;
   [SOCKET_EVENTS.COPILOT_RESPONSE_GENERATED]: CopilotEventPayload;

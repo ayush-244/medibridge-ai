@@ -66,6 +66,16 @@ export interface RegisterHospitalPayload {
   };
 }
 
+export interface RegisterDoctorPayload {
+  name: string;
+  email: string;
+  password: string;
+  phone?: string;
+  specialization: string;
+  experience?: number;
+  hospitalId: string;
+}
+
 export interface ChangePasswordPayload {
   currentPassword: string;
   newPassword: string;

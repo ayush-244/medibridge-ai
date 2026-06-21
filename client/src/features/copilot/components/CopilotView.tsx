@@ -273,8 +273,6 @@ export function CopilotView() {
     <PatientSnapshotCard
       snapshot={snapshot}
       isLoading={snapshotLoading}
-      patientId={effectivePatientId}
-      referralId={patientContext?.referralId}
     />
   );
 

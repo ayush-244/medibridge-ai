@@ -10,13 +10,11 @@ import { ROUTES } from "@/lib/routes";
 import { cn } from "@/lib/utils";
 
 interface SmartActionsProps {
-  patientId: string;
   referralId?: string;
   variant?: "snapshot" | "drawer" | "inline";
 }
 
 export function SmartActions({
-  patientId,
   referralId,
   variant = "inline",
 }: SmartActionsProps) {
@@ -34,7 +32,7 @@ export function SmartActions({
       disabled: !referralId,
       onClick: () =>
         navigate(
-          `${ROUTES.AI_RECOMMENDATIONS}?patient_id=${patientId}&referral_id=${referralId}`,
+          `${ROUTES.AI_RECOMMENDATIONS}?referral_id=${referralId}`,
         ),
     },
     {

@@ -1,7 +1,7 @@
 import json
 import re
 import time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from app.core.exceptions import LLMAPIError, NoDocumentsError, RecommendationGenerationError
 from app.core.logger import logger
@@ -46,6 +46,30 @@ RECOMMENDATION_PROMPT = (
     "{context}"
 )
 
+REFERRAL_FALLBACK_PROMPT = (
+    "You are MediBridge Referral Assistant.\n\n"
+    "A patient is being referred with the following clinical information:\n\n"
+    "Patient Name: {patient_name}\n"
+    "Age: {age}\n"
+    "Condition / Diagnosis: {condition}\n\n"
+    "Based on this referral information, determine the SINGLE most appropriate specialist.\n\n"
+    "Rules:\n"
+    "- Choose exactly one specialization from this list:\n"
+    f"{SPECIALIZATIONS_LIST}\n\n"
+    "- Base your recommendation on the condition described\n"
+    "- Confidence should reflect that this is based on referral text only, not full medical records\n\n"
+    "Return JSON only.\n\n"
+    "{{\n"
+    '  "specialist": "",\n'
+    '  "confidence": 0,\n'
+    '  "reason": ""\n'
+    "}}\n\n"
+    "Confidence guidelines for referral-based recommendations:\n"
+    "- Clear condition with obvious specialty: 55-65\n"
+    "- Condition with moderate clarity: 45-54\n"
+    "- Vague or ambiguous condition: 40-44\n"
+)
+
 
 def _merge_clinical_chunks(patient_id: str) -> List[Dict[str, Any]]:
     seen: set[tuple[str, int]] = set()
@@ -80,6 +104,17 @@ def _parse_recommendation_response(raw_response: str) -> Dict[str, Any]:
                 "Failed to generate specialist recommendation."
             ) from exc
 
+    if isinstance(parsed, list):
+        if not parsed:
+            raise RecommendationGenerationError(
+                "Failed to generate specialist recommendation."
+            )
+        parsed = parsed[0]
+        if not isinstance(parsed, dict):
+            raise RecommendationGenerationError(
+                "Failed to generate specialist recommendation."
+            )
+
     specialist_raw = str(parsed.get("specialist", "")).strip()
     reason = str(parsed.get("reason", "")).strip()
     confidence_raw = parsed.get("confidence", 0)
@@ -111,7 +146,71 @@ def _parse_recommendation_response(raw_response: str) -> Dict[str, Any]:
     }
 
 
-def recommend_specialist(patient_id: str) -> Dict[str, Any]:
+def recommend_specialist_from_referral(
+    patient_name: str,
+    age: int,
+    condition: str,
+) -> Dict[str, Any]:
+    """
+    Generate a specialist recommendation using referral clinical data only.
+    Used as a fallback when ChromaDB contains no documents for the patient scope.
+    Confidence is clamped to 40–65 to reflect lower certainty.
+    """
+    logger.info(
+        "Referral fallback recommendation for condition=%s age=%s",
+        condition,
+        age,
+    )
+
+    prompt = REFERRAL_FALLBACK_PROMPT.format(
+        patient_name=patient_name,
+        age=age,
+        condition=condition,
+    )
+
+    try:
+        raw_response = get_llm_service().generate_completion(
+            prompt,
+            response_json=True,
+            temperature=0.1,
+            max_tokens=512,
+        )
+    except LLMAPIError as exc:
+        logger.error("Referral fallback LLM call failed: %s", exc)
+        raise RecommendationGenerationError(
+            "Failed to generate specialist recommendation."
+        ) from exc
+    except Exception as exc:
+        logger.error("Referral fallback generation failed: %s", exc)
+        raise RecommendationGenerationError(
+            "Failed to generate specialist recommendation."
+        ) from exc
+
+    recommendation = _parse_recommendation_response(raw_response)
+
+    # Clamp confidence to referral fallback range: 40–65
+    recommendation["confidence"] = max(40, min(65, recommendation["confidence"]))
+
+    logger.info(
+        "Referral fallback recommendation: specialist=%s confidence=%d",
+        recommendation["specialist"],
+        recommendation["confidence"],
+    )
+
+    return {
+        "specialist": recommendation["specialist"],
+        "recommendedSpecialist": recommendation["specialist"],
+        "confidence": recommendation["confidence"],
+        "reason": recommendation["reason"],
+        "supportingEvidence": [],
+        "source": "referral",
+    }
+
+
+def recommend_specialist(
+    patient_id: str,
+    referral_context: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     sanitized_patient_id = patient_id.strip()
     request_start = time.perf_counter()
 
@@ -131,14 +230,35 @@ def recommend_specialist(patient_id: str) -> Dict[str, Any]:
     )
 
     if not chunks:
+        if referral_context:
+            logger.info(
+                "No documents for patientId=%s — using referral context fallback",
+                sanitized_patient_id,
+            )
+            return recommend_specialist_from_referral(
+                patient_name=referral_context.get("patientName", "Unknown"),
+                age=referral_context.get("age", 0),
+                condition=referral_context.get("condition", ""),
+            )
         raise NoDocumentsError("No medical documents found for this patient.")
 
     context = build_context(chunks)
     if not context.strip():
+        if referral_context:
+            logger.info(
+                "Empty context for patientId=%s — using referral context fallback",
+                sanitized_patient_id,
+            )
+            return recommend_specialist_from_referral(
+                patient_name=referral_context.get("patientName", "Unknown"),
+                age=referral_context.get("age", 0),
+                condition=referral_context.get("condition", ""),
+            )
         raise NoDocumentsError("No medical documents found for this patient.")
 
     prompt = RECOMMENDATION_PROMPT.format(context=context)
 
+    llm_ms = 0.0
     try:
         logger.info("OpenRouter recommendation request for patientId=%s", sanitized_patient_id)
         llm_start = time.perf_counter()
@@ -174,6 +294,10 @@ def recommend_specialist(patient_id: str) -> Dict[str, Any]:
         ) from exc
 
     recommendation = _parse_recommendation_response(raw_response)
+
+    # Clamp confidence to document RAG range: 60–100
+    recommendation["confidence"] = max(60, min(100, recommendation["confidence"]))
+
     citations = build_citations(chunks)
 
     total_ms = round((time.perf_counter() - request_start) * 1000, 2)
@@ -195,4 +319,5 @@ def recommend_specialist(patient_id: str) -> Dict[str, Any]:
         "confidence": recommendation["confidence"],
         "reason": recommendation["reason"],
         "supportingEvidence": citations,
+        "source": "documents",
     }

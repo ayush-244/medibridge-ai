@@ -1,26 +1,28 @@
-import { Loader2, Sparkles } from "lucide-react";
+import { FileText, Loader2, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RecommendationConfidence } from "@/features/ai-recommendations/components/RecommendationConfidence";
 import { RecommendationEvidence } from "@/features/ai-recommendations/components/RecommendationEvidence";
-import { useSpecialistRecommendation } from "@/features/ai-recommendations/hooks/useSpecialistRecommendation";
+import { useReferralSpecialistRecommendation } from "@/features/referrals/hooks/useReferralSpecialistRecommendation";
 import { getSpecialistDisplayName } from "@/features/ai-recommendations/utils/specialistDisplay";
 
 interface SpecialistRecommendationCardProps {
-  patientId: string;
+  referralId: string;
   enabled: boolean;
 }
 
 export function SpecialistRecommendationCard({
-  patientId,
+  referralId,
   enabled,
 }: SpecialistRecommendationCardProps) {
   const {
     recommendation,
+    source,
     isLoading,
     error,
     generateRecommendation,
     resetRecommendation,
-  } = useSpecialistRecommendation(enabled ? patientId : null);
+  } = useReferralSpecialistRecommendation(enabled ? referralId : null);
 
   if (!enabled) {
     return null;
@@ -70,9 +72,23 @@ export function SpecialistRecommendationCard({
         {recommendation && !isLoading && (
           <div className="space-y-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                Recommended Specialist
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                  Recommended Specialist
+                </p>
+                {source === "documents" && (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <FileText className="h-3 w-3" />
+                    Based on Uploaded Records
+                  </Badge>
+                )}
+                {source === "referral" && (
+                  <Badge variant="outline" className="gap-1 text-xs text-amber-600 border-amber-200">
+                    <FileText className="h-3 w-3" />
+                    Based on Referral Details
+                  </Badge>
+                )}
+              </div>
               <p className="mt-1 text-lg font-semibold text-text-primary">
                 {getSpecialistDisplayName(recommendation.specialist)}
               </p>

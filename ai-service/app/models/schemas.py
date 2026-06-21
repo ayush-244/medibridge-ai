@@ -95,6 +95,18 @@ class RecommendationRequest(BaseModel):
     )
 
 
+class ReferralContextRequest(BaseModel):
+    patient_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Referral ID used as ChromaDB patient scope.",
+    )
+    patientName: Optional[str] = Field(default=None, description="Patient name from referral.")
+    age: Optional[int] = Field(default=None, description="Patient age from referral.")
+    condition: Optional[str] = Field(default=None, description="Clinical condition from referral.")
+
+
 class RecommendationResponse(BaseModel):
     specialist: str = Field(..., examples=["Cardiology"])
     recommendedSpecialist: str = Field(..., examples=["Cardiology"])
@@ -107,6 +119,10 @@ class RecommendationResponse(BaseModel):
         ],
     )
     supportingEvidence: List[Citation] = Field(default_factory=list)
+    source: Optional[str] = Field(
+        default=None,
+        description="Source of the recommendation: 'documents' or 'referral'.",
+    )
 
 class RecommendedHospital(BaseModel):
     hospitalId: str
@@ -145,6 +161,12 @@ class HospitalMatchRequest(BaseModel):
         ...,
         min_length=1,
         examples=["6a26b08bceaee55f6b61bd97"],
+    )
+
+    origin_hospital_id: Optional[str] = Field(
+        default=None,
+        examples=["6a26b08bceaee55f6b61bd97"],
+        description="Pre-referral origin hospital ID (used instead of referral_id for pre-referral flow).",
     )
 
 
@@ -186,6 +208,25 @@ class ClinicalIntelligenceResponse(PatientSnapshotResponse):
     pass
 
 
+class ReassignDocumentsRequest(BaseModel):
+    from_patient_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Current patient ID (temporary UUID) to reassign from.",
+    )
+    to_patient_id: str = Field(
+        ...,
+        min_length=1,
+        max_length=128,
+        description="Target patient ID (referral._id) to reassign to.",
+    )
+
+
+class ReassignDocumentsData(BaseModel):
+    documents_reassigned: int = 0
+
+
 class ApiResponse(BaseModel):
     success: bool
     data: Optional[
@@ -198,6 +239,7 @@ class ApiResponse(BaseModel):
             PatientSnapshotResponse,
             ClinicalIntelligenceResponse,
             List[PatientDocument],
+            ReassignDocumentsData,
             Dict[str, Any],
         ]
     ] = None
