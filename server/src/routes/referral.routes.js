@@ -16,6 +16,7 @@ const {
   getAiHospitals,
   uploadReferralDocument,
   pdfUpload,
+  extractReferralData,
 } = require("../controllers/referralRecommendations.controller");
 
 const authenticateUser = require(
@@ -110,6 +111,18 @@ router.post(
     "REFERRAL_COORDINATOR"
   ),
   getAiHospitals
+);
+
+// AI: Extract referral data from clinical documents
+router.post(
+  "/extract",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  extractReferralData
 );
 
 // AI: Specialist Recommendation (BFF — no manual IDs required)

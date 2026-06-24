@@ -208,6 +208,16 @@ class ClinicalIntelligenceResponse(PatientSnapshotResponse):
     pass
 
 
+class ReferralAutofillData(BaseModel):
+    patientName: Optional[str] = None
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    diagnosis: Optional[str] = None
+    conditionSummary: Optional[str] = None
+    priority: Optional[str] = None
+    requiredSpecialty: Optional[str] = None
+
+
 class ReassignDocumentsRequest(BaseModel):
     from_patient_id: str = Field(
         ...,
@@ -238,6 +248,7 @@ class ApiResponse(BaseModel):
             HospitalMatchData,
             PatientSnapshotResponse,
             ClinicalIntelligenceResponse,
+            ReferralAutofillData,
             List[PatientDocument],
             ReassignDocumentsData,
             Dict[str, Any],

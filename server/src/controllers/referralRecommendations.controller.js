@@ -370,6 +370,56 @@ const getAiHospitals = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/referrals/extract
+ *
+ * Extracts structured referral data from uploaded clinical documents.
+ * Requires patientId (temp UUID) — documents must already be uploaded.
+ * Returns ReferralAutofillData with nullable fields.
+ */
+const extractReferralData = async (req, res) => {
+  try {
+    const { patientId } = req.body;
+
+    if (!patientId) {
+      return res.status(400).json({
+        success: false,
+        message: "patientId is required",
+      });
+    }
+
+    const payload = {
+      patient_id: patientId,
+    };
+
+    const aiResponse = await axios.post(
+      `${AI_SERVICE_URL}/api/ai/extract-referral`,
+      payload,
+      { timeout: 60000 },
+    );
+
+    const aiData = aiResponse.data;
+
+    if (!aiData.success) {
+      return res.status(502).json({
+        success: false,
+        message: aiData.message || "Unable to extract patient information from this document.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: aiData.data,
+    });
+  } catch (error) {
+    console.error("[referralRecommendations] extraction error:", error?.message || error);
+    return res.status(500).json({
+      success: false,
+      message: "Unable to extract patient information from this document.",
+    });
+  }
+};
+
 module.exports = {
   getSpecialistRecommendation,
   getHospitalRecommendations,
@@ -377,4 +427,5 @@ module.exports = {
   getAiHospitals,
   uploadReferralDocument,
   pdfUpload,
+  extractReferralData,
 };

@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import { referralRecommendationsService } from "@/features/referrals/services/referralRecommendations.service";
+import { referralAutofillService } from "@/features/referral-autofill/services/referralAutofill.service";
 import type { SpecialistRecommendation } from "@/features/ai-recommendations/types/recommendation.types";
 import type { HospitalMatchResult } from "@/types/recommendation.types";
+import type { ReferralAutofillData } from "@/features/referral-autofill/types/referralAutofill.types";
 
 interface AiState {
   isGenerating: boolean;
@@ -17,6 +19,12 @@ interface DocumentUploadState {
   uploadedFileName: string | null;
 }
 
+interface ExtractionState {
+  isExtracting: boolean;
+  data: ReferralAutofillData | null;
+  error: string | null;
+}
+
 export function useAiSuggestions(tempId: string) {
   const [aiState, setAiState] = useState<AiState>({
     isGenerating: false,
@@ -30,6 +38,12 @@ export function useAiSuggestions(tempId: string) {
     isUploading: false,
     error: null,
     uploadedFileName: null,
+  });
+
+  const [extractionState, setExtractionState] = useState<ExtractionState>({
+    isExtracting: false,
+    data: null,
+    error: null,
   });
 
   const generateSuggestions = useCallback(
@@ -143,6 +157,42 @@ export function useAiSuggestions(tempId: string) {
     [tempId],
   );
 
+  const extractReferralData = useCallback(async () => {
+    setExtractionState({
+      isExtracting: true,
+      data: null,
+      error: null,
+    });
+
+    try {
+      const result = await referralAutofillService.extractReferralData(tempId);
+
+      setExtractionState({
+        isExtracting: false,
+        data: result,
+        error: null,
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Unable to extract patient information from this document.";
+      setExtractionState({
+        isExtracting: false,
+        data: null,
+        error: message,
+      });
+    }
+  }, [tempId]);
+
+  const discardExtraction = useCallback(() => {
+    setExtractionState({
+      isExtracting: false,
+      data: null,
+      error: null,
+    });
+  }, []);
+
   const resetUpload = useCallback(() => {
     setDocState({
       progress: 0,
@@ -161,13 +211,39 @@ export function useAiSuggestions(tempId: string) {
     });
   }, []);
 
+  const resetAll = useCallback(() => {
+    setAiState({
+      isGenerating: false,
+      specialist: null,
+      hospitals: null,
+      error: null,
+    });
+    setDocState({
+      progress: 0,
+      isUploading: false,
+      error: null,
+      uploadedFileName: null,
+    });
+    setExtractionState({
+      isExtracting: false,
+      data: null,
+      error: null,
+    });
+  }, []);
+
   return {
     ...aiState,
     ...docState,
     docError: docState.error,
+    ...extractionState,
+    extractionData: extractionState.data,
+    extractionError: extractionState.error,
     generateSuggestions,
     uploadDocument,
+    extractReferralData,
+    discardExtraction,
     resetUpload,
     clearSuggestions,
+    resetAll,
   };
 }

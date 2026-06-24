@@ -9,8 +9,10 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ExtractionPreviewCard } from "@/features/referral-autofill/components/ExtractionPreviewCard";
 import type { SpecialistRecommendation } from "@/features/ai-recommendations/types/recommendation.types";
-import type { HospitalMatchResult, RecommendedHospital } from "@/types/recommendation.types";
+import type { HospitalMatchResult } from "@/types/recommendation.types";
+import type { ReferralAutofillData } from "@/features/referral-autofill/types/referralAutofill.types";
 
 const MAX_SIZE_MB = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -29,20 +31,24 @@ interface AiSuggestionPanelProps {
   isUploading: boolean;
   docError: string | null;
   uploadedFileName: string | null;
+  isExtracting: boolean;
+  extractionData: ReferralAutofillData | null;
+  extractionError: string | null;
+  isExtractionApplied: boolean;
   onGenerate: () => void;
   onUpload: (file: File) => void;
   onResetUpload: () => void;
   onClear: () => void;
   onApplySpecialist: (specialist: string) => void;
   onSelectDestinationHospital: (hospitalId: string) => void;
+  onExtract: () => void;
+  onApplyExtraction: () => void;
+  onDiscardExtraction: () => void;
 }
 
 export function AiSuggestionPanel({
-  patientName,
-  age,
   diagnosis,
   conditionSummary,
-  originHospitalId,
   isGenerating,
   specialist,
   hospitals,
@@ -51,12 +57,19 @@ export function AiSuggestionPanel({
   isUploading,
   docError,
   uploadedFileName,
+  isExtracting,
+  extractionData,
+  extractionError,
+  isExtractionApplied,
   onGenerate,
   onUpload,
   onResetUpload,
   onClear,
   onApplySpecialist,
-  onSelectHospital,
+  onSelectDestinationHospital,
+  onExtract,
+  onApplyExtraction,
+  onDiscardExtraction,
 }: AiSuggestionPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +134,7 @@ export function AiSuggestionPanel({
       >
         <span className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          AI Suggestions
+          AI Assistant
         </span>
         {isOpen ? (
           <ChevronUp className="h-4 w-4" />
@@ -132,9 +145,10 @@ export function AiSuggestionPanel({
 
       {isOpen && (
         <div className="border-t border-border px-4 py-3 space-y-3">
+          {/* Upload Section */}
           <div className="rounded-lg border border-border p-4">
             <h4 className="mb-3 text-sm font-semibold">
-              Upload Clinical Documents
+              Upload Clinical Document
             </h4>
 
             <input
@@ -227,10 +241,53 @@ export function AiSuggestionPanel({
             )}
 
             <p className="mt-2 text-xs text-text-secondary">
-              PDF only, max {MAX_SIZE_MB} MB.
+              PDF only, max {MAX_SIZE_MB} MB. Uploaded documents remain available for AI recommendations and clinical context.
             </p>
           </div>
 
+          {/* Extraction Section */}
+          {uploadedFileName && !isUploading && !extractionData && !isExtracting && !extractionError && (
+            <Button
+              type="button"
+              size="sm"
+              className="w-full gap-2"
+              onClick={onExtract}
+            >
+              {isExtracting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Extract Patient Information
+            </Button>
+          )}
+
+          {isExtracting && (
+            <div className="flex items-center justify-center gap-2 py-4 text-sm text-text-secondary">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Extracting patient information...
+            </div>
+          )}
+
+          {extractionError && (
+            <div className="rounded-lg border border-danger/20 bg-danger/5 p-3">
+              <p className="text-sm text-danger">{extractionError}</p>
+              <p className="mt-1 text-xs text-text-secondary">
+                Please review the document or complete the form manually.
+              </p>
+            </div>
+          )}
+
+          {extractionData && (
+            <ExtractionPreviewCard
+              data={extractionData}
+              onApply={onApplyExtraction}
+              onDiscard={onDiscardExtraction}
+              isApplied={isExtractionApplied}
+            />
+          )}
+
+          {/* AI Suggestions Section */}
           <Button
             type="button"
             size="sm"

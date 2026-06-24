@@ -51,6 +51,8 @@ export function CreateReferralDialog({
     getInitialReferralFormValues(defaultFromHospitalId),
   );
 
+  const [isExtractionApplied, setIsExtractionApplied] = useState(false);
+
   const updateField = useCallback(
     <K extends keyof CreateReferralFormValues>(
       field: K,
@@ -69,6 +71,45 @@ export function CreateReferralDialog({
       originHospitalId: values.fromHospital,
     });
   }, [values.patientName, values.age, values.diagnosis, values.conditionSummary, values.fromHospital, ai.generateSuggestions]);
+
+  const handleApplyExtraction = useCallback(() => {
+    const data = ai.extractionData;
+    if (!data) return;
+
+    if (data.patientName) {
+      updateField("patientName", data.patientName);
+    }
+    if (data.age != null) {
+      updateField("age", String(data.age));
+    }
+    if (data.gender) {
+      updateField("gender", data.gender as CreateReferralFormValues["gender"]);
+    }
+    if (data.diagnosis) {
+      updateField("diagnosis", data.diagnosis);
+    }
+    if (data.conditionSummary) {
+      updateField("conditionSummary", data.conditionSummary);
+    }
+    if (data.priority) {
+      updateField("priority", data.priority as CreateReferralFormValues["priority"]);
+    }
+    if (data.requiredSpecialty) {
+      updateField("requiredSpecialty", data.requiredSpecialty);
+    }
+
+    setIsExtractionApplied(true);
+
+    // Use a microtask to ensure form state is settled before triggering recommendations
+    setTimeout(() => {
+      ai.generateSuggestions({
+        patientName: data.patientName ?? values.patientName,
+        age: data.age != null ? String(data.age) : values.age,
+        condition: (data.diagnosis ?? values.diagnosis) + ". " + (data.conditionSummary ?? values.conditionSummary),
+        originHospitalId: values.fromHospital,
+      });
+    }, 0);
+  }, [ai.extractionData, ai.generateSuggestions, updateField, values.patientName, values.age, values.diagnosis, values.conditionSummary, values.fromHospital]);
 
   const handleApplySpecialist = useCallback(
     (specialist: string) => {
@@ -136,8 +177,8 @@ export function CreateReferralDialog({
         if (!nextOpen) {
           tempIdRef.current = generateTempId();
           setValues(getInitialReferralFormValues(defaultFromHospitalId));
-          ai.clearSuggestions();
-          ai.resetUpload();
+          setIsExtractionApplied(false);
+          ai.resetAll();
         }
         onOpenChange(nextOpen);
       }}
@@ -165,12 +206,19 @@ export function CreateReferralDialog({
             isUploading={ai.isUploading}
             docError={ai.docError}
             uploadedFileName={ai.uploadedFileName}
+            isExtracting={ai.isExtracting}
+            extractionData={ai.extractionData}
+            extractionError={ai.extractionError}
+            isExtractionApplied={isExtractionApplied}
             onGenerate={handleGenerate}
             onUpload={handleUpload}
             onResetUpload={ai.resetUpload}
             onClear={ai.clearSuggestions}
             onApplySpecialist={handleApplySpecialist}
             onSelectDestinationHospital={handleSelectDestinationHospital}
+            onExtract={ai.extractReferralData}
+            onApplyExtraction={handleApplyExtraction}
+            onDiscardExtraction={ai.discardExtraction}
           />
 
           <ReferralForm
