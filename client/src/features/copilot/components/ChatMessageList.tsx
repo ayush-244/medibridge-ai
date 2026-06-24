@@ -5,12 +5,12 @@ import { ThinkingIndicator } from "@/features/copilot/components/ThinkingIndicat
 
 interface ChatMessageListProps {
   messages: ChatMessage[];
-  patientId: string;
+  patientId?: string;
   referralId?: string;
   isSending: boolean;
   thinkingMessage: string;
-  onSuggestedQuestion: (question: string) => void;
-  onRegenerate: () => void;
+  onSuggestedQuestion?: (question: string) => void;
+  onRegenerate?: () => void;
   headerContent?: React.ReactNode;
 }
 

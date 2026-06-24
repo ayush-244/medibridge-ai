@@ -19,6 +19,8 @@ import { ReferralKanban } from "@/features/referrals/components/ReferralKanban";
 import { ReferralDetailDrawer } from "@/features/referrals/components/ReferralDetailDrawer";
 import { ReferralConfirmDialog } from "@/features/referrals/components/ReferralConfirmDialog";
 import { CreateReferralDialog } from "@/features/referrals/components/CreateReferralDialog";
+import { CopilotSlideOver } from "@/features/copilot/components/CopilotSlideOver";
+import type { CopilotReferralContext } from "@/features/copilot/types/copilot.types";
 import { ReferralTableSkeleton } from "@/features/referrals/components/ReferralTableSkeleton";
 import { ReferralKanbanSkeleton } from "@/features/referrals/components/ReferralKanbanSkeleton";
 import {
@@ -75,6 +77,14 @@ export function ReferralsView() {
   );
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [copilotContext, setCopilotContext] =
+    useState<CopilotReferralContext | null>(null);
+
+  const handleOpenCopilot = useCallback((context: CopilotReferralContext) => {
+    setCopilotContext(context);
+    setCopilotOpen(true);
+  }, []);
 
   const showCreateReferral = canCreateReferral(user?.role);
 
@@ -346,8 +356,17 @@ export function ReferralsView() {
         actionLoading={actionLoading}
         onOpenChange={handleDrawerChange}
         onAction={handleActionRequest}
+        onOpenCopilot={handleOpenCopilot}
         userHospitalId={user?.hospital}
       />
+
+      {copilotContext && (
+        <CopilotSlideOver
+          open={copilotOpen}
+          referralContext={copilotContext}
+          onClose={() => setCopilotOpen(false)}
+        />
+      )}
 
       <ReferralConfirmDialog
         open={confirmOpen}

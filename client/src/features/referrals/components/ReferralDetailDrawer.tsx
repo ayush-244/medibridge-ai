@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -19,7 +19,6 @@ import { SpecialistRecommendationCard } from "@/features/ai-recommendations";
 import { DocumentUploadSection } from "@/features/referrals/components/DocumentUploadSection";
 import { HospitalRecommendationSection } from "@/features/referrals/components/HospitalRecommendationSection";
 import { useReferralReservation } from "@/features/referrals/hooks/useReferralReservation";
-import { getReferralPriority } from "@/features/referrals/utils/severity";
 import {
   canCompleteReferral,
   formatReferralDate,
@@ -28,10 +27,12 @@ import {
   getHospitalName,
   getReferralLifecycleSteps,
 } from "@/features/referrals/utils/referralUtils";
+import { getReferralPriority } from "@/features/referrals/utils/severity";
 import type {
   Referral,
   ReferralAction,
 } from "@/features/referrals/types/referral.types";
+import type { CopilotReferralContext } from "@/features/copilot/types/copilot.types";
 
 interface DetailRowProps {
   label: string;
@@ -54,6 +55,7 @@ interface ReferralDetailDrawerProps {
   actionLoading: ReferralAction | null;
   onOpenChange: (open: boolean) => void;
   onAction: (action: ReferralAction) => void;
+  onOpenCopilot?: (context: CopilotReferralContext) => void;
   userHospitalId?: string | null;
 }
 
@@ -63,6 +65,7 @@ export function ReferralDetailDrawer({
   actionLoading,
   onOpenChange,
   onAction,
+  onOpenCopilot,
   userHospitalId,
 }: ReferralDetailDrawerProps) {
   const { reservation, isLoading: reservationLoading } =
@@ -210,6 +213,29 @@ export function ReferralDetailDrawer({
         </SheetBody>
 
         <div className="border-t border-border p-6 space-y-2">
+          {onOpenCopilot && (
+            <Button
+              variant="secondary"
+              className="w-full gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+              onClick={() =>
+                onOpenCopilot({
+                  referralId: referral._id,
+                  patientName: referral.patientName,
+                  age: referral.age,
+                  diagnosis: referral.condition,
+                  condition: referral.condition,
+                  sourceHospital: getHospitalName(referral.fromHospital),
+                  destinationHospital: getHospitalName(referral.toHospital),
+                  priority: getReferralPriority(referral.condition),
+                  status: referral.status,
+                  documents: [],
+                })
+              }
+            >
+              <Bot className="h-4 w-4" />
+              Open AI Copilot
+            </Button>
+          )}
           {canRespondToReferral && (
             <Button
               className="w-full gap-2"

@@ -1,20 +1,23 @@
 import { Bot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ConnectionStatusIndicator } from "@/components/layout/ConnectionStatusIndicator";
-import { PatientInsightsToggle } from "@/features/copilot/components/PatientInsightsDrawer";
-import type { PatientContext } from "@/features/copilot/types/copilot.types";
+import { useCopilot } from "@/features/copilot/context/CopilotContext";
+import { cn } from "@/lib/utils";
 
 interface CopilotHeaderProps {
-  patientContext?: PatientContext | null;
   aiReady?: boolean;
-  onOpenInsights?: () => void;
 }
 
-export function CopilotHeader({
-  patientContext,
-  aiReady = true,
-  onOpenInsights,
-}: CopilotHeaderProps) {
+export function CopilotHeader({ aiReady = true }: CopilotHeaderProps) {
+  const { patientName, patientContext, mode } = useCopilot();
+
+  const displayName =
+    mode === "referral" && patientContext?.patientName
+      ? patientContext.patientName
+      : mode === "document" && patientName
+        ? patientName
+        : null;
+
   return (
     <header className="sticky top-0 z-30 shrink-0 border-b border-white/40 bg-white/70 backdrop-blur-xl">
       <div className="flex h-12 items-center justify-between gap-3 px-4">
@@ -25,33 +28,28 @@ export function CopilotHeader({
           <h1 className="truncate text-sm font-semibold text-text-primary sm:text-base">
             Clinical Copilot
           </h1>
-          {patientContext && (
+          {displayName && (
             <span className="hidden truncate text-xs text-text-secondary sm:inline">
-              · Patient:{" "}
-              <span className="font-medium text-text-primary">
-                {patientContext.patientId}
-              </span>
+              ·{" "}
+              <span className="font-medium text-text-primary">{displayName}</span>
             </span>
           )}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          {onOpenInsights && (
-            <PatientInsightsToggle onClick={onOpenInsights} className="hidden sm:flex" />
-          )}
-
           <Badge
             variant="outline"
-            className={
+            className={cn(
               aiReady
                 ? "border-emerald-200/80 bg-emerald-50/80 text-[10px] text-emerald-700 sm:text-xs"
-                : "border-amber-200/80 bg-amber-50/80 text-[10px] text-amber-700 sm:text-xs"
-            }
+                : "border-amber-200/80 bg-amber-50/80 text-[10px] text-amber-700 sm:text-xs",
+            )}
           >
             <span
-              className={`mr-1.5 inline-block h-1.5 w-1.5 rounded-full ${
-                aiReady ? "bg-emerald-500" : "animate-pulse bg-amber-500"
-              }`}
+              className={cn(
+                "mr-1.5 inline-block h-1.5 w-1.5 rounded-full",
+                aiReady ? "bg-emerald-500" : "animate-pulse bg-amber-500",
+              )}
             />
             {aiReady ? "AI Ready" : "Processing"}
           </Badge>

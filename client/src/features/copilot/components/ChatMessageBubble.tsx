@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 interface ChatMessageBubbleProps {
   message: ChatMessage;
-  patientId: string;
+  patientId?: string;
   referralId?: string;
   onSuggestedQuestion?: (question: string) => void;
   onRegenerate?: () => void;

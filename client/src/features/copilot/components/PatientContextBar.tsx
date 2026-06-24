@@ -1,20 +1,21 @@
 import { motion } from "framer-motion";
-import type { PatientContext } from "@/features/copilot/types/copilot.types";
+import { useCopilot } from "@/features/copilot/context/CopilotContext";
 import { getRiskBadgeClass } from "@/features/copilot/utils/copilotUtils";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface PatientContextBarProps {
-  context: PatientContext;
-}
+export function PatientContextBar() {
+  const { patientContext } = useCopilot();
 
-export function PatientContextBar({ context }: PatientContextBarProps) {
+  if (!patientContext) return null;
+
   const items = [
-    { label: context.patientId, highlight: true },
-    context.gender && { label: context.gender },
-    context.age !== undefined && { label: `${context.age} Years` },
-    context.hospital && { label: context.hospital },
-    { label: `Diagnosis: ${context.diagnosis}` },
+    patientContext.patientName && { label: patientContext.patientName, highlight: true },
+    patientContext.gender && { label: patientContext.gender },
+    patientContext.age !== undefined && { label: `${patientContext.age} Years` },
+    patientContext.sourceHospital && { label: `From: ${patientContext.sourceHospital}` },
+    patientContext.destinationHospital && { label: `To: ${patientContext.destinationHospital}` },
+    { label: `Diagnosis: ${patientContext.diagnosis}` },
   ].filter(Boolean) as { label: string; highlight?: boolean }[];
 
   return (
@@ -45,9 +46,9 @@ export function PatientContextBar({ context }: PatientContextBarProps) {
 
       <Badge
         variant="outline"
-        className={cn("shrink-0 text-[10px] sm:text-xs", getRiskBadgeClass(context.riskLevel))}
+        className={cn("shrink-0 text-[10px] sm:text-xs", getRiskBadgeClass(patientContext.riskLevel))}
       >
-        Risk: {context.riskLevel}
+        Risk: {patientContext.riskLevel}
       </Badge>
     </motion.div>
   );

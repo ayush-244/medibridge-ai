@@ -84,7 +84,6 @@ export interface CopilotAnalyticsSummary {
 }
 
 export interface PatientContext {
-  patientId: string;
   patientName: string;
   age?: number;
   gender?: string;
@@ -99,23 +98,46 @@ export interface PatientContext {
   medications?: string[];
   aiConfidence?: number;
   aiFindings?: string[];
+  sourceHospital?: string;
+  destinationHospital?: string;
 }
 
-export const QUICK_STARTERS = [
-  { label: "Summarize Patient", question: "Summarize this patient's medical records." },
-  { label: "Show Diagnosis", question: "What is the primary diagnosis?" },
-  { label: "Show Medications", question: "What medications is the patient taking?" },
-  { label: "Show Risk Factors", question: "What risk factors are documented?" },
-  { label: "Recommend Specialist", question: "Which specialist is recommended?" },
-  { label: "Follow-Up Care", question: "What follow-up care is required?" },
-] as const;
+export interface CopilotReferralContext {
+  referralId: string;
+  patientName: string;
+  age: number;
+  gender?: string;
+  diagnosis: string;
+  condition: string;
+  sourceHospital: string;
+  destinationHospital: string;
+  priority: string;
+  status: string;
+  documents: { fileName: string; uploadDate: string }[];
+}
 
-export const DEFAULT_SUGGESTED_QUESTIONS = [
-  "What is the diagnosis?",
-  "What medications is the patient taking?",
-  "What risk factors are documented?",
-  "Which specialist is recommended?",
-  "What follow-up care is required?",
-  "Why was the patient referred?",
-  "What abnormalities were detected?",
-];
+export interface CopilotDocumentAnalysis {
+  patientName?: string;
+  age?: number;
+  diagnosis?: string;
+  medications?: string[];
+  riskFactors?: string[];
+  extractedFrom: string[];
+}
+
+export type CopilotMode = "referral" | "document";
+
+export interface CopilotDocumentsResponse {
+  documents: PatientDocument[];
+  total: number;
+  hasMore: boolean;
+}
+
+export interface ReferralAutofillData {
+  patientName: string;
+  age: number;
+  gender: string;
+  diagnosis: string;
+  medications: string[];
+  riskFactors: string[];
+}

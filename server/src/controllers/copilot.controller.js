@@ -7,9 +7,24 @@ const {
   trackCopilotEvent,
   getCopilotAnalyticsSummary,
 } = require("../services/copilotAnalytics.service");
+const multer = require("multer");
+const path = require("path");
 
 const AI_SERVICE_URL =
-  process.env.AI_SERVICE_URL || "http://localhost:8000/api/ai";
+  process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (file.mimetype !== "application/pdf" || ext !== ".pdf") {
+      cb(new Error("Only PDF files are allowed"));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 const COPILOT_ROLES = [
   "SUPER_ADMIN",
@@ -18,8 +33,12 @@ const COPILOT_ROLES = [
   "DOCTOR",
 ];
 
+const AI_API = AI_SERVICE_URL.includes("/api/ai")
+  ? AI_SERVICE_URL
+  : `${AI_SERVICE_URL}/api/ai`;
+
 async function callAiChat(patientId, question) {
-  const response = await fetch(`${AI_SERVICE_URL}/chat`, {
+  const response = await fetch(`${AI_API}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -39,7 +58,7 @@ async function callAiChat(patientId, question) {
 
 async function callAiDocuments(patientId) {
   const response = await fetch(
-    `${AI_SERVICE_URL}/documents/${encodeURIComponent(patientId)}`,
+    `${AI_API}/documents/${encodeURIComponent(patientId)}`,
   );
 
   const body = await response.json();
@@ -52,7 +71,7 @@ async function callAiDocuments(patientId) {
 }
 
 async function callAiSnapshot(patientId) {
-  const response = await fetch(`${AI_SERVICE_URL}/patient-snapshot`, {
+  const response = await fetch(`${AI_API}/patient-snapshot`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ patient_id: patientId }),
@@ -68,7 +87,7 @@ async function callAiSnapshot(patientId) {
 }
 
 async function callAiClinicalIntelligence(patientId) {
-  const response = await fetch(`${AI_SERVICE_URL}/clinical-intelligence`, {
+  const response = await fetch(`${AI_API}/clinical-intelligence`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ patient_id: patientId }),
@@ -88,7 +107,6 @@ function buildSessionTitle(question) {
   if (trimmed.length <= 60) {
     return trimmed;
   }
-
   return `${trimmed.slice(0, 57)}...`;
 }
 
@@ -174,7 +192,10 @@ const createSession = async (req, res) => {
       patientId: patientId.trim(),
       referralId: resolvedReferralId,
       userId: req.user.id,
-      title: title?.trim() || `${patientId.trim()} Clinical Session`,
+      title: title?.trim() || (resolvedPatientName
+        ? `${resolvedPatientName} Clinical Session`
+        : `${patientId.trim()} Clinical Session`
+      ),
       patientName: resolvedPatientName,
       condition: resolvedCondition,
     });
@@ -183,7 +204,7 @@ const createSession = async (req, res) => {
       action: "COPILOT_SESSION_STARTED",
       entityType: "ChatSession",
       entityId: session._id,
-      description: `Clinical Copilot session started for ${patientId.trim()}`,
+      description: `Clinical Copilot session started for ${resolvedPatientName || patientId.trim()}`,
       performedBy: req.user.id,
     });
 
@@ -251,7 +272,7 @@ const sendMessage = async (req, res) => {
       action: "COPILOT_QUESTION_ASKED",
       entityType: "ChatSession",
       entityId: session._id,
-      description: `Copilot question for ${session.patientId}: ${sanitizedQuestion.slice(0, 80)}`,
+      description: `Copilot question for ${session.patientName || session.patientId}: ${sanitizedQuestion.slice(0, 80)}`,
       performedBy: req.user.id,
     });
 
@@ -308,7 +329,7 @@ const sendMessage = async (req, res) => {
       action: "COPILOT_RESPONSE_GENERATED",
       entityType: "ChatSession",
       entityId: session._id,
-      description: `Copilot response generated for ${session.patientId} (confidence ${aiResponse.confidence || 0}%)`,
+      description: `Copilot response generated for ${session.patientName || session.patientId} (confidence ${aiResponse.confidence || 0}%)`,
       performedBy: req.user.id,
     });
 
@@ -348,6 +369,8 @@ const sendMessage = async (req, res) => {
 const getDocuments = async (req, res) => {
   try {
     const { patientId } = req.params;
+    const cursor = parseInt(req.query.cursor, 10) || 0;
+    const limit = parseInt(req.query.limit, 10) || 20;
 
     if (!patientId?.trim()) {
       return res.status(400).json({
@@ -357,10 +380,16 @@ const getDocuments = async (req, res) => {
     }
 
     const documents = await callAiDocuments(patientId.trim());
+    const paginated = documents.slice(cursor, cursor + limit);
+    const hasMore = cursor + limit < documents.length;
 
     res.status(200).json({
       success: true,
-      data: documents,
+      data: {
+        documents: paginated,
+        total: documents.length,
+        hasMore,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -388,7 +417,7 @@ const getPatientSnapshot = async (req, res) => {
       action: "PATIENT_SNAPSHOT_GENERATED",
       entityType: "Patient",
       entityId: patientId.trim(),
-      description: `AI patient snapshot generated for ${patientId.trim()} (${snapshot.primaryDiagnosis})`,
+      description: `AI patient snapshot generated for patient (${snapshot.primaryDiagnosis})`,
       performedBy: req.user.id,
     });
 
@@ -396,7 +425,7 @@ const getPatientSnapshot = async (req, res) => {
       action: "RISK_ANALYSIS_GENERATED",
       entityType: "Patient",
       entityId: patientId.trim(),
-      description: `Risk analysis generated for ${patientId.trim()} (${snapshot.riskLevel} risk)`,
+      description: `Risk analysis generated for patient (${snapshot.riskLevel} risk)`,
       performedBy: req.user.id,
     });
 
@@ -469,7 +498,7 @@ const getClinicalIntelligence = async (req, res) => {
       action: "RISK_ANALYSIS_GENERATED",
       entityType: "Patient",
       entityId: patientId.trim(),
-      description: `Risk analysis generated for ${patientId.trim()} (${intelligence.riskLevel} risk)`,
+      description: `Risk analysis generated for patient (${intelligence.riskLevel} risk)`,
       performedBy: req.user.id,
     });
 
@@ -525,6 +554,43 @@ const getAnalytics = async (req, res) => {
   }
 };
 
+const uploadDocument = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No file provided",
+      });
+    }
+
+    const patientId = req.body.patient_id || `doc-${Date.now()}`;
+    const formData = new FormData();
+    const blob = new Blob([req.file.buffer], { type: "application/pdf" });
+    formData.append("file", blob, req.file.originalname);
+    formData.append("patient_id", patientId);
+    formData.append("uploaded_by", req.user.id);
+
+    const response = await fetch(`${AI_API}/upload`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      return res.status(502).json(result);
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("[copilot] document upload error:", error?.message || error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to upload document",
+    });
+  }
+};
+
 module.exports = {
   COPILOT_ROLES,
   getSessions,
@@ -535,4 +601,6 @@ module.exports = {
   getPatientSnapshot,
   getClinicalIntelligence,
   getAnalytics,
+  uploadDocument,
+  pdfUpload,
 };

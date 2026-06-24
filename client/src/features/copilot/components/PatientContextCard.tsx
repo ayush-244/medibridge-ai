@@ -1,20 +1,16 @@
 import { motion } from "framer-motion";
-import {
-  Activity,
-  Building2,
-  Calendar,
-  Heart,
-  User,
-} from "lucide-react";
+import { Activity, Building2, Calendar, Heart, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { PatientContext } from "@/features/copilot/types/copilot.types";
+import { useCopilot } from "@/features/copilot/context/CopilotContext";
 import { getRiskBadgeClass } from "@/features/copilot/utils/copilotUtils";
 
-interface PatientContextCardProps {
-  context: PatientContext;
-}
+export function PatientContextCard() {
+  const { patientContext } = useCopilot();
 
-export function PatientContextCard({ context }: PatientContextCardProps) {
+  if (!patientContext) return null;
+
+  const context = patientContext;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: -8 }}
@@ -26,17 +22,13 @@ export function PatientContextCard({ context }: PatientContextCardProps) {
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
             <span className="font-semibold text-text-primary">
-              {context.patientName || context.patientId}
+              {context.patientName}
             </span>
-            <span className="text-sm text-text-secondary">{context.patientId}</span>
           </div>
           <p className="text-sm font-medium text-text-primary">{context.diagnosis}</p>
         </div>
 
-        <Badge
-          variant="outline"
-          className={getRiskBadgeClass(context.riskLevel)}
-        >
+        <Badge variant="outline" className={getRiskBadgeClass(context.riskLevel)}>
           {context.riskLevel} RISK
         </Badge>
       </div>
@@ -54,10 +46,10 @@ export function PatientContextCard({ context }: PatientContextCardProps) {
             <span>{context.gender}</span>
           </div>
         )}
-        {context.hospital && (
+        {context.sourceHospital && (
           <div className="col-span-2 flex items-center gap-2 text-sm">
             <Building2 className="h-3.5 w-3.5 text-text-secondary" />
-            <span className="truncate">{context.hospital}</span>
+            <span className="truncate">{context.sourceHospital}</span>
           </div>
         )}
         {context.referralStatus && (

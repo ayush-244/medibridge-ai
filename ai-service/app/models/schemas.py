@@ -32,8 +32,8 @@ class ChatRequest(BaseModel):
         ...,
         min_length=1,
         max_length=128,
-        examples=["PATIENT001"],
-        description="Unique patient identifier used for document isolation.",
+        examples=["referral-abc123"],
+        description="Unique patient or referral identifier used for document isolation.",
     )
     question: str = Field(
         ...,
@@ -42,25 +42,6 @@ class ChatRequest(BaseModel):
         examples=["What medications is the patient taking?"],
         description="Clinical question to answer from uploaded patient records.",
     )
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "patient_id": "PATIENT001",
-                    "question": "What is the primary diagnosis?",
-                },
-                {
-                    "patient_id": "PATIENT001",
-                    "question": "What medications is the patient taking?",
-                },
-                {
-                    "patient_id": "PATIENT001",
-                    "question": "What are the patient's risk factors?",
-                },
-            ]
-        }
-    }
 
 
 class ChatResponse(BaseModel):
@@ -90,8 +71,8 @@ class RecommendationRequest(BaseModel):
         ...,
         min_length=1,
         max_length=128,
-        examples=["PATIENT001"],
-        description="Unique patient identifier used for document isolation.",
+        examples=["referral-abc123"],
+        description="Unique patient or referral identifier used for document isolation.",
     )
 
 
@@ -154,7 +135,7 @@ class HospitalMatchRequest(BaseModel):
         ...,
         min_length=1,
         max_length=128,
-        examples=["PATIENT001"],
+        examples=["referral-abc123"],
     )
 
     referral_id: str = Field(
@@ -175,7 +156,7 @@ class PatientSnapshotRequest(BaseModel):
         ...,
         min_length=1,
         max_length=128,
-        examples=["PATIENT002"],
+        examples=["referral-abc123"],
     )
 
 
@@ -184,7 +165,7 @@ class ClinicalIntelligenceRequest(BaseModel):
         ...,
         min_length=1,
         max_length=128,
-        examples=["PATIENT002"],
+        examples=["referral-abc123"],
     )
 
 

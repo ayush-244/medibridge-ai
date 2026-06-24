@@ -1,4 +1,5 @@
 const express = require("express");
+const multer = require("multer");
 
 const {
   COPILOT_ROLES,
@@ -10,6 +11,8 @@ const {
   getPatientSnapshot,
   getClinicalIntelligence,
   getAnalytics,
+  uploadDocument,
+  pdfUpload,
 } = require("../controllers/copilot.controller");
 
 const authenticateUser = require("../middleware/auth.middleware");
@@ -43,6 +46,25 @@ router.post(
   authenticateUser,
   authorize(...COPILOT_ROLES),
   sendMessage,
+);
+
+router.post(
+  "/documents/upload",
+  authenticateUser,
+  authorize(...COPILOT_ROLES),
+  (req, res, next) => {
+    pdfUpload.single("file")(req, res, (err) => {
+      if (err) {
+        const message =
+          err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE"
+            ? "Document must be 10 MB or smaller"
+            : err.message || "Failed to upload document";
+        return res.status(400).json({ success: false, message });
+      }
+      next();
+    });
+  },
+  uploadDocument,
 );
 
 router.get(
