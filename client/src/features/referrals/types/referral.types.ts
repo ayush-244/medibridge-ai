@@ -108,3 +108,44 @@ export interface CreateReferralRequest {
 export type CreateReferralFormErrors = Partial<
   Record<keyof CreateReferralFormValues, string>
 >;
+
+export interface ReferralDocument {
+  _id: string;
+  referralId: string;
+  filename: string;
+  originalFilename: string;
+  uploadedBy?: string;
+  uploadedByName: string;
+  fileSize: number;
+  mimeType: string;
+  chunkCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TimelineEventType =
+  | "REFERRAL_CREATED"
+  | "AI_AUTOFILL_GENERATED"
+  | "SPECIALIST_RECOMMENDED"
+  | "HOSPITAL_RECOMMENDED"
+  | "REFERRAL_SUBMITTED"
+  | "REFERRAL_ACCEPTED"
+  | "REFERRAL_REJECTED"
+  | "DOCTOR_ASSIGNED"
+  | "BED_RESERVED"
+  | "RESERVATION_EXTENDED"
+  | "PATIENT_ARRIVED"
+  | "RESERVATION_CANCELLED"
+  | "RESERVATION_COMPLETED"
+  | "REFERRAL_COMPLETED";
+
+export interface TimelineEventItem {
+  _id: string;
+  referralId: string;
+  eventType: TimelineEventType;
+  actorId?: string;
+  actorName: string;
+  description: string;
+  metadata?: Record<string, unknown>;
+  createdAt: string;
+}

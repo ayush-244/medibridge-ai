@@ -252,3 +252,48 @@ def list_patient_documents(
         sanitized_patient_id,
     )
     return documents
+
+
+def delete_document_chunks(
+    patient_id: str,
+    file_name: str,
+    settings: Optional[Settings] = None,
+) -> int:
+    config = settings or get_settings()
+    sanitized_patient_id = patient_id.strip()
+    sanitized_file_name = file_name.strip()
+
+    try:
+        collection = _get_collection(config)
+        results = collection.get(
+            where={"patientId": sanitized_patient_id, "fileName": sanitized_file_name},
+            include=["metadatas"],
+        )
+
+        ids = results.get("ids") or []
+        if not ids:
+            logger.info(
+                "No chunks found to delete for patientId=%s fileName=%s",
+                sanitized_patient_id,
+                sanitized_file_name,
+            )
+            return 0
+
+        collection.delete(ids=ids)
+
+        logger.info(
+            "Deleted %d chunks for patientId=%s fileName=%s",
+            len(ids),
+            sanitized_patient_id,
+            sanitized_file_name,
+        )
+
+        return len(ids)
+    except Exception as exc:
+        logger.error(
+            "ChromaDB delete failed for patientId=%s fileName=%s: %s",
+            sanitized_patient_id,
+            sanitized_file_name,
+            exc,
+        )
+        raise VectorStoreError(f"Failed to delete document chunks: {exc}") from exc

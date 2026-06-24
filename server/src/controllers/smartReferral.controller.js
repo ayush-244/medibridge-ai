@@ -8,6 +8,7 @@ const getBedType = require("../utils/bedTypeMapper");
 const Doctor = require("../models/Doctor");
 const calculateDistance = require("../utils/distance");
 const {acceptReferralService,} = require("../services/referralAcceptance.service");
+const { recordTimelineEvent } = require("../services/timeline.service");
 
 const createSmartReferral = async (req, res) => {
   try {
@@ -103,6 +104,13 @@ const createSmartReferral = async (req, res) => {
           bestHospital._id,
         requestedBy,
       });
+
+    await recordTimelineEvent({
+      referralId: referral._id,
+      eventType: "REFERRAL_CREATED",
+      description: `AI-optimized referral created for ${patientName} → ${bestHospital.name}`,
+      metadata: { smartMatch: true, hospitalName: bestHospital.name, severity, specialization, bedType },
+    });
 
     res.status(201).json({
       success: true,

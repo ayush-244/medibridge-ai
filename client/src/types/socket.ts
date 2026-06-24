@@ -27,6 +27,10 @@ export const SOCKET_EVENTS = {
   COPILOT_RESPONSE_GENERATED: "copilotResponseGenerated",
   PATIENT_SNAPSHOT_GENERATED: "patientSnapshotGenerated",
   RISK_ANALYSIS_GENERATED: "riskAnalysisGenerated",
+  TIMELINE_UPDATED: "timelineUpdated",
+  DOCUMENT_UPLOADED: "documentUploaded",
+  DOCUMENT_DELETED: "documentDeleted",
+  DOCUMENT_REPLACED: "documentReplaced",
 } as const;
 
 export type SocketEventName =
@@ -139,6 +143,24 @@ export interface PasswordChangedPayload {
   firstLogin: boolean;
 }
 
+export interface TimelineUpdatedPayload {
+  referralId: string;
+  event: {
+    _id: string;
+    eventType: string;
+    actorName: string;
+    description: string;
+    metadata?: Record<string, unknown>;
+    createdAt: string;
+  };
+}
+
+export interface DocumentPayload {
+  referralId: string;
+  documentId: string;
+  filename: string;
+}
+
 export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.NOTIFICATION_CREATED]: NotificationCreatedPayload;
   [SOCKET_EVENTS.REFERRAL_ACCEPTED]: ReferralAcceptedPayload;
@@ -168,6 +190,10 @@ export interface SocketEventPayloadMap {
   [SOCKET_EVENTS.COPILOT_RESPONSE_GENERATED]: CopilotEventPayload;
   [SOCKET_EVENTS.PATIENT_SNAPSHOT_GENERATED]: CopilotEventPayload;
   [SOCKET_EVENTS.RISK_ANALYSIS_GENERATED]: CopilotEventPayload;
+  [SOCKET_EVENTS.TIMELINE_UPDATED]: TimelineUpdatedPayload;
+  [SOCKET_EVENTS.DOCUMENT_UPLOADED]: DocumentPayload;
+  [SOCKET_EVENTS.DOCUMENT_DELETED]: DocumentPayload;
+  [SOCKET_EVENTS.DOCUMENT_REPLACED]: DocumentPayload;
 }
 
 export interface SocketLastEvent {

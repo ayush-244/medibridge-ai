@@ -9,6 +9,7 @@ from app.models.schemas import (
     ReassignDocumentsRequest,
 )
 from app.services.vector_service import (
+    delete_document_chunks,
     list_patient_documents,
     reassign_patient_documents,
 )
@@ -46,6 +47,39 @@ def get_patient_documents(patient_id: str) -> ApiResponse:
             exc,
         )
         return ApiResponse(success=False, message="Failed to list documents.")
+
+
+@router.delete(
+    "/documents/{patient_id}/{file_name}",
+    response_model=ApiResponse,
+    summary="Delete all Chroma chunks for a specific file in a patient scope",
+)
+def delete_patient_document(patient_id: str, file_name: str) -> ApiResponse:
+    try:
+        count = delete_document_chunks(
+            patient_id=patient_id.strip(),
+            file_name=file_name.strip(),
+        )
+        return ApiResponse(
+            success=True,
+            data={"chunks_deleted": count},
+        )
+    except VectorStoreError as exc:
+        logger.error(
+            "Document delete failed for patientId=%s fileName=%s: %s",
+            patient_id,
+            file_name,
+            exc,
+        )
+        return ApiResponse(success=False, message=str(exc))
+    except Exception as exc:
+        logger.exception(
+            "Unexpected document delete error for patientId=%s fileName=%s: %s",
+            patient_id,
+            file_name,
+            exc,
+        )
+        return ApiResponse(success=False, message="Failed to delete document.")
 
 
 @router.post(

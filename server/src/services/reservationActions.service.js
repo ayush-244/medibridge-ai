@@ -4,6 +4,7 @@ const Doctor = require("../models/Doctor");
 const logActivity = require("./activityLogger.service");
 const createNotification = require("./notification.service");
 const emitEvent = require("./socketEmitter.service");
+const { recordTimelineEvent } = require("./timeline.service");
 
 const VALID_DURATIONS = [1, 2, 4, 6, 12, 24];
 
@@ -58,6 +59,13 @@ const patientArrived = async (reservationId, performedBy) => {
   reservation.reservationStatus = "ARRIVED";
   await reservation.save();
 
+  await recordTimelineEvent({
+    referralId: reservation.referral,
+    eventType: "PATIENT_ARRIVED",
+    actorId: performedBy,
+    description: `Patient ${reservation.patientName} arrived at the hospital`,
+  });
+
   await logActivity({
     action: "PATIENT_ARRIVED",
     entityType: "Reservation",
@@ -108,6 +116,14 @@ const extendReservation = async (reservationId, durationHours, performedBy) => {
   }
   await reservation.save();
 
+  await recordTimelineEvent({
+    referralId: reservation.referral,
+    eventType: "RESERVATION_EXTENDED",
+    actorId: performedBy,
+    description: `Reservation extended by ${durationHours}h for ${reservation.patientName}`,
+    metadata: { durationHours },
+  });
+
   await logActivity({
     action: "RESERVATION_EXTENDED",
     entityType: "Reservation",
@@ -142,6 +158,13 @@ const cancelReservation = async (reservationId, performedBy) => {
   await reservation.save();
 
   await releaseResources(reservation);
+
+  await recordTimelineEvent({
+    referralId: reservation.referral,
+    eventType: "RESERVATION_CANCELLED",
+    actorId: performedBy,
+    description: `Reservation cancelled for ${reservation.patientName}`,
+  });
 
   await logActivity({
     action: "RESERVATION_CANCELLED",
@@ -182,6 +205,13 @@ const completeReservation = async (reservationId, performedBy) => {
   await reservation.save();
 
   await releaseResources(reservation);
+
+  await recordTimelineEvent({
+    referralId: reservation.referral,
+    eventType: "RESERVATION_COMPLETED",
+    actorId: performedBy,
+    description: `Reservation completed for ${reservation.patientName}`,
+  });
 
   await logActivity({
     action: "RESERVATION_COMPLETED",

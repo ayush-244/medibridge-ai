@@ -3,6 +3,8 @@ const axios = require("axios");
 const multer = require("multer");
 const path = require("path");
 
+const { recordTimelineEvent } = require("../services/timeline.service");
+
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
 
 const pdfUpload = multer({
@@ -85,6 +87,17 @@ const getSpecialistRecommendation = async (req, res) => {
         message: aiData.message || "AI service failed to generate recommendation",
       });
     }
+
+    const specialistName = aiData.data?.specialistName || aiData.data?.specialty || "Specialist";
+
+    await recordTimelineEvent({
+      referralId,
+      eventType: "SPECIALIST_RECOMMENDED",
+      actorId: req.user?._id || req.user?.id,
+      actorName: req.user?.name || "System",
+      description: `${specialistName} recommended for ${referral.patientName}`,
+      metadata: { specialist: aiData.data },
+    });
 
     return res.status(200).json({
       success: true,
@@ -170,6 +183,17 @@ const getHospitalRecommendations = async (req, res) => {
         message: aiData.message || "AI service failed to generate hospital recommendations",
       });
     }
+
+    const hospitalName = aiData.data?.recommendedHospital || "Hospital";
+
+    await recordTimelineEvent({
+      referralId,
+      eventType: "HOSPITAL_RECOMMENDED",
+      actorId: req.user?._id || req.user?.id,
+      actorName: req.user?.name || "System",
+      description: `${hospitalName} recommended for ${referral.patientName}`,
+      metadata: { hospitals: aiData.data },
+    });
 
     return res.status(200).json({
       success: true,

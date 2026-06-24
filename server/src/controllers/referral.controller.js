@@ -7,6 +7,7 @@ const getBedType = require("../utils/bedTypeMapper");
 const logActivity = require("../services/activityLogger.service");
 const createNotification = require("../services/notification.service");
 const emitEvent = require("../services/socketEmitter.service");
+const { recordTimelineEvent } = require("../services/timeline.service");
 const {
   acceptReferralService,
 } = require("../services/referralAcceptance.service");
@@ -15,10 +16,21 @@ const createReferral = async (req, res) => {
   try {
     const referral = await Referral.create(req.body);
 
+    const actorName =
+      typeof req.user?.name === "string" ? req.user.name : "System";
+
     await logActivity({
       action: "REFERRAL_CREATED",
       entityType: "Referral",
       entityId: referral._id,
+      description: `Referral created for ${referral.patientName}`,
+    });
+
+    await recordTimelineEvent({
+      referralId: referral._id,
+      eventType: "REFERRAL_CREATED",
+      actorId: req.user?._id || req.user?.id,
+      actorName,
       description: `Referral created for ${referral.patientName}`,
     });
 
@@ -133,6 +145,34 @@ const rejectReferral = async (req, res) => {
       });
     }
 
+    const actorName =
+      typeof req.user?.name === "string" ? req.user.name : "System";
+
+    await recordTimelineEvent({
+      referralId: referral._id,
+      eventType: "REFERRAL_REJECTED",
+      actorId: req.user?._id || req.user?.id,
+      actorName,
+      description: `Referral rejected for ${referral.patientName}`,
+    });
+
+    await logActivity({
+      action: "REFERRAL_REJECTED",
+      entityType: "Referral",
+      entityId: referral._id,
+      description: `Referral rejected for ${referral.patientName}`,
+    });
+
+    await createNotification({
+      title: "Referral Rejected",
+      message: `${referral.patientName} referral rejected`,
+      type: "WARNING",
+    });
+
+    emitEvent("dashboardUpdated", {
+      action: "REFERRAL_REJECTED",
+    });
+
     res.status(200).json({
       success: true,
       message: "Referral rejected",
@@ -162,6 +202,34 @@ const completeReferral = async (req, res) => {
         message: "Referral not found",
       });
     }
+
+    const actorName =
+      typeof req.user?.name === "string" ? req.user.name : "System";
+
+    await recordTimelineEvent({
+      referralId: referral._id,
+      eventType: "REFERRAL_COMPLETED",
+      actorId: req.user?._id || req.user?.id,
+      actorName,
+      description: `Referral completed for ${referral.patientName}`,
+    });
+
+    await logActivity({
+      action: "REFERRAL_COMPLETED",
+      entityType: "Referral",
+      entityId: referral._id,
+      description: `Referral completed for ${referral.patientName}`,
+    });
+
+    await createNotification({
+      title: "Referral Completed",
+      message: `${referral.patientName} referral completed`,
+      type: "SUCCESS",
+    });
+
+    emitEvent("dashboardUpdated", {
+      action: "REFERRAL_COMPLETED",
+    });
 
     res.status(200).json({
       success: true,

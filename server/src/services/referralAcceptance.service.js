@@ -10,6 +10,7 @@ const getBedType = require("../utils/bedTypeMapper");
 const logActivity = require("./activityLogger.service");
 const createNotification = require("./notification.service");
 const emitEvent = require("./socketEmitter.service");
+const { recordTimelineEvent } = require("./timeline.service");
 
 const acceptReferralService = async (referralId) => {
   const referral = await Referral.findById(referralId);
@@ -137,6 +138,27 @@ emitEvent("dashboardUpdated", {
     entityType: "Referral",
     entityId: referral._id,
     description: `Referral accepted for ${referral.patientName}`,
+  });
+
+  await recordTimelineEvent({
+    referralId: referral._id,
+    eventType: "REFERRAL_ACCEPTED",
+    description: `Referral accepted — ${referral.patientName} assigned to ${doctor.name} (${specialization})`,
+    metadata: { doctorName: doctor.name, specialization, bedType },
+  });
+
+  await recordTimelineEvent({
+    referralId: referral._id,
+    eventType: "DOCTOR_ASSIGNED",
+    description: `${doctor.name} assigned as ${specialization}`,
+    metadata: { doctorId: doctor._id.toString(), doctorName: doctor.name, specialization },
+  });
+
+  await recordTimelineEvent({
+    referralId: referral._id,
+    eventType: "BED_RESERVED",
+    description: `${bedType} bed reserved at ${hospital.name}`,
+    metadata: { hospitalId: hospital._id.toString(), hospitalName: hospital.name, bedType },
   });
 
   return {

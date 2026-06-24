@@ -1,5 +1,7 @@
-import { Bot, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Bot, Clock, FileText, FolderOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -13,19 +15,17 @@ import {
   ReferralStatusBadge,
 } from "@/components/common/StatusBadge";
 import { ReferralDrawerSkeleton } from "@/features/referrals/components/ReferralDrawerSkeleton";
-import { ReferralTimeline } from "@/features/referrals/components/ReferralTimeline";
+import { ReferralTimelineView } from "@/features/referrals/components/ReferralTimelineView";
+import { DocumentsTab } from "@/features/referrals/components/DocumentsTab";
 import { ReferralRouteMap } from "@/features/maps/components/ReferralRouteMap";
 import { SpecialistRecommendationCard } from "@/features/ai-recommendations";
-import { DocumentUploadSection } from "@/features/referrals/components/DocumentUploadSection";
 import { HospitalRecommendationSection } from "@/features/referrals/components/HospitalRecommendationSection";
-import { useReferralReservation } from "@/features/referrals/hooks/useReferralReservation";
 import {
   canCompleteReferral,
   formatReferralDate,
   getHospitalCity,
   getHospitalLocation,
   getHospitalName,
-  getReferralLifecycleSteps,
 } from "@/features/referrals/utils/referralUtils";
 import { getReferralPriority } from "@/features/referrals/utils/severity";
 import type {
@@ -68,8 +68,7 @@ export function ReferralDetailDrawer({
   onOpenCopilot,
   userHospitalId,
 }: ReferralDetailDrawerProps) {
-  const { reservation, isLoading: reservationLoading } =
-    useReferralReservation(referral?._id ?? null, open && !!referral);
+  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "documents">("details");
 
   if (!referral) {
     return (
@@ -82,10 +81,6 @@ export function ReferralDetailDrawer({
   }
 
   const priority = getReferralPriority(referral.condition);
-  const timeline = getReferralLifecycleSteps(
-    referral.status,
-    reservation?.reservationStatus,
-  );
   const requestedBy =
     typeof referral.requestedBy === "string"
       ? referral.requestedBy
@@ -115,101 +110,127 @@ export function ReferralDetailDrawer({
           </div>
         </SheetHeader>
 
-        <SheetBody className="flex-1 space-y-6">
-          <div>
-            <h4 className="mb-2 text-sm font-semibold">Patient Information</h4>
-            <div className="divide-y divide-border rounded-lg border border-border px-4">
-              <DetailRow label="Patient Name" value={referral.patientName} />
-              <DetailRow label="Age" value={referral.age} />
-              <DetailRow label="Condition" value={referral.condition} />
-              <DetailRow label="Priority" value={priority} />
-              <DetailRow label="Requested By" value={requestedBy} />
-            </div>
-          </div>
-
-          <SpecialistRecommendationCard
-            referralId={referral._id}
-            enabled={open}
-          />
-
-          <HospitalRecommendationSection
-            referralId={referral._id}
-            enabled={open}
-          />
-
-          <div>
-            <h4 className="mb-2 text-sm font-semibold">Hospital Routing</h4>
-            <div className="divide-y divide-border rounded-lg border border-border px-4">
-              <DetailRow
-                label="From Hospital"
-                value={getHospitalName(referral.fromHospital)}
-              />
-              <DetailRow
-                label="From City"
-                value={getHospitalCity(referral.fromHospital) || "—"}
-              />
-              <DetailRow
-                label="To Hospital"
-                value={getHospitalName(referral.toHospital)}
-              />
-              <DetailRow
-                label="To City"
-                value={getHospitalCity(referral.toHospital) || "—"}
-              />
-            </div>
-          </div>
-
-          <div>
-            <h4 className="mb-2 text-sm font-semibold">Route Overview</h4>
-            <ReferralRouteMap
-              sourceName={getHospitalName(referral.fromHospital)}
-              destinationName={getHospitalName(referral.toHospital)}
-              sourceLocation={getHospitalLocation(referral.fromHospital)}
-              destinationLocation={getHospitalLocation(referral.toHospital)}
-              className="h-[280px]"
-            />
-          </div>
-
-          <div>
-            <h4 className="mb-2 text-sm font-semibold">Lifecycle Timeline</h4>
-            {reservationLoading ? (
-              <div className="flex items-center gap-2 text-sm text-text-secondary">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Loading reservation details...
-              </div>
-            ) : (
-              <ReferralTimeline
-                steps={timeline}
-                timestamp={formatReferralDate(referral.updatedAt)}
-              />
+        <div className="flex gap-1 border-b border-border px-6 pt-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("details")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+              activeTab === "details"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary",
             )}
-          </div>
+          >
+            <FileText className="h-4 w-4" />
+            Details
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("documents")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+              activeTab === "documents"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary",
+            )}
+          >
+            <FolderOpen className="h-4 w-4" />
+            Documents
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("timeline")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+              activeTab === "timeline"
+                ? "border-primary text-primary"
+                : "border-transparent text-text-secondary hover:text-text-primary",
+            )}
+          >
+            <Clock className="h-4 w-4" />
+            Timeline
+          </button>
+        </div>
 
-          <div>
-            <h4 className="mb-2 text-sm font-semibold">Dates</h4>
-            <div className="divide-y divide-border rounded-lg border border-border px-4">
-              <DetailRow
-                label="Created"
-                value={formatReferralDate(referral.createdAt)}
+        <SheetBody className="flex-1">
+          {activeTab === "details" ? (
+            <div className="space-y-6">
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Patient Information</h4>
+                <div className="divide-y divide-border rounded-lg border border-border px-4">
+                  <DetailRow label="Patient Name" value={referral.patientName} />
+                  <DetailRow label="Age" value={referral.age} />
+                  <DetailRow label="Condition" value={referral.condition} />
+                  <DetailRow label="Priority" value={priority} />
+                  <DetailRow label="Requested By" value={requestedBy} />
+                  <DetailRow
+                    label="Created"
+                    value={formatReferralDate(referral.createdAt)}
+                  />
+                  <DetailRow
+                    label="Last Updated"
+                    value={formatReferralDate(referral.updatedAt)}
+                  />
+                </div>
+              </div>
+
+              <SpecialistRecommendationCard
+                referralId={referral._id}
+                enabled={open}
               />
-              <DetailRow
-                label="Last Updated"
-                value={formatReferralDate(referral.updatedAt)}
+
+              <HospitalRecommendationSection
+                referralId={referral._id}
+                enabled={open}
+              />
+
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Hospital Routing</h4>
+                <div className="divide-y divide-border rounded-lg border border-border px-4">
+                  <DetailRow
+                    label="From Hospital"
+                    value={getHospitalName(referral.fromHospital)}
+                  />
+                  <DetailRow
+                    label="From City"
+                    value={getHospitalCity(referral.fromHospital) || "\u2014"}
+                  />
+                  <DetailRow
+                    label="To Hospital"
+                    value={getHospitalName(referral.toHospital)}
+                  />
+                  <DetailRow
+                    label="To City"
+                    value={getHospitalCity(referral.toHospital) || "\u2014"}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h4 className="mb-2 text-sm font-semibold">Route Overview</h4>
+                <ReferralRouteMap
+                  sourceName={getHospitalName(referral.fromHospital)}
+                  destinationName={getHospitalName(referral.toHospital)}
+                  sourceLocation={getHospitalLocation(referral.fromHospital)}
+                  destinationLocation={getHospitalLocation(referral.toHospital)}
+                  className="h-[280px]"
+                />
+              </div>
+
+              <ReferralPriorityBadge priority={priority} />
+            </div>
+          ) : activeTab === "documents" ? (
+            <div className="py-4">
+              <DocumentsTab referralId={referral._id} open={open} />
+            </div>
+          ) : (
+            <div className="py-4">
+              <ReferralTimelineView
+                referralId={referral._id}
+                open={open}
               />
             </div>
-          </div>
-
-          <DocumentUploadSection
-            referralId={referral._id}
-            onUploadComplete={() => {
-              const event = new CustomEvent("referral-doc-uploaded", {
-                detail: { referralId: referral._id },
-              });
-              window.dispatchEvent(event);
-            }}
-          />
-
-          <ReferralPriorityBadge priority={priority} />
+          )}
         </SheetBody>
 
         <div className="border-t border-border p-6 space-y-2">

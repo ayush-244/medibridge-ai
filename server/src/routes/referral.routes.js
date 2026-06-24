@@ -19,6 +19,16 @@ const {
   extractReferralData,
 } = require("../controllers/referralRecommendations.controller");
 
+const { getReferralTimeline } = require("../controllers/timeline.controller");
+
+const {
+  getReferralDocuments,
+  uploadReferralDocument: uploadDoc,
+  deleteReferralDocument,
+  downloadReferralDocument,
+  replaceReferralDocument,
+} = require("../controllers/document.controller");
+
 const authenticateUser = require(
   "../middleware/auth.middleware"
 );
@@ -149,9 +159,21 @@ router.post(
   getHospitalRecommendations
 );
 
-// Upload clinical document (PDF) scoped to this referral
+// List Documents for a Referral
+router.get(
+  "/:id/documents",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  getReferralDocuments
+);
+
+// Upload Document to Referral
 router.post(
-  "/:referralId/documents/upload",
+  "/:id/documents",
   authenticateUser,
   authorize(
     "SUPER_ADMIN",
@@ -170,7 +192,67 @@ router.post(
       next();
     });
   },
-  uploadReferralDocument
+  uploadDoc
+);
+
+// Download Document
+router.get(
+  "/:id/documents/:documentId/download",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  downloadReferralDocument
+);
+
+// Replace Document
+router.put(
+  "/:id/documents/:documentId/replace",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  (req, res, next) => {
+    pdfUpload.single("file")(req, res, (err) => {
+      if (err) {
+        const message =
+          err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE"
+            ? "Document must be 10 MB or smaller"
+            : err.message || "Failed to upload document";
+        return res.status(400).json({ success: false, message });
+      }
+      next();
+    });
+  },
+  replaceReferralDocument
+);
+
+// Delete Document
+router.delete(
+  "/:id/documents/:documentId",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  deleteReferralDocument
+);
+
+// Get Referral Timeline
+router.get(
+  "/:id/timeline",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  getReferralTimeline
 );
 
 module.exports = router;

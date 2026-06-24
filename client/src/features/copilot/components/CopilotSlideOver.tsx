@@ -145,13 +145,6 @@ function CopilotSlideOverInner({
 
                 <ScrollArea className="min-h-0 flex-1">
                   <div className="mx-auto flex max-w-[900px] flex-col gap-5 px-4 py-5">
-                    {!hasMessages && !isSending && snapshot && (
-                      <PatientSnapshotCard
-                        snapshot={snapshot}
-                        isLoading={snapshotLoading}
-                      />
-                    )}
-
                     {hasMessages && (
                       <ChatMessageList
                         messages={messages}
