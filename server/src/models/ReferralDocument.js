@@ -5,7 +5,12 @@ const referralDocumentSchema = new mongoose.Schema(
     referralId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Referral",
-      required: true,
+      default: null,
+      index: true,
+    },
+    tempPatientId: {
+      type: String,
+      default: null,
       index: true,
     },
     filename: { type: String, required: true },
@@ -25,5 +30,6 @@ const referralDocumentSchema = new mongoose.Schema(
 );
 
 referralDocumentSchema.index({ referralId: 1, createdAt: -1 });
+referralDocumentSchema.index({ tempPatientId: 1 });
 
 module.exports = mongoose.model("ReferralDocument", referralDocumentSchema);

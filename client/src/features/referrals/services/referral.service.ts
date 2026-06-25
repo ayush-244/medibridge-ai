@@ -6,6 +6,9 @@ import type {
   CreateReferralRequest,
   TimelineEventItem,
   ReferralDocument,
+  ReviewData,
+  AiSummary,
+  SmartAcceptPayload,
 } from "@/features/referrals/types/referral.types";
 
 export const referralService = {
@@ -147,5 +150,43 @@ export const referralService = {
   getDocumentDownloadUrl(id: string, documentId: string): string {
     const baseUrl = api.defaults.baseURL || "";
     return `${baseUrl}/referrals/${id}/documents/${documentId}/download`;
+  },
+
+  async getById(id: string): Promise<Referral> {
+    const { data } = await api.get<ApiResponse<Referral>>(`/referrals/${id}`);
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to fetch referral");
+    }
+
+    return data.data;
+  },
+
+  async getReviewData(id: string): Promise<ReviewData> {
+    const { data } = await api.get<ApiResponse<ReviewData>>(`/referrals/${id}/review`);
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to fetch review data");
+    }
+
+    return data.data;
+  },
+
+  async getAiSummary(id: string): Promise<AiSummary> {
+    const { data } = await api.get<ApiResponse<AiSummary>>(`/referrals/${id}/ai-summary`);
+
+    if (!data.success || !data.data) {
+      throw new Error(data.message || "Failed to generate AI summary");
+    }
+
+    return data.data;
+  },
+
+  async smartAccept(id: string, payload: SmartAcceptPayload): Promise<void> {
+    const { data } = await api.post<ApiResponse>(`/referrals/${id}/smart-accept`, payload);
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to accept referral");
+    }
   },
 };

@@ -29,7 +29,14 @@ function getEventColor(eventType: TimelineEventType): string {
       return "bg-amber-500 border-amber-500";
     case "REFERRAL_REJECTED":
     case "RESERVATION_CANCELLED":
+    case "DOCUMENT_DELETED":
       return "bg-red-500 border-red-500";
+    case "DOCUMENT_UPLOADED":
+    case "DOCUMENT_REPLACED":
+      return "bg-indigo-500 border-indigo-500";
+    case "DOCUMENT_VIEWED":
+    case "DOCUMENT_DOWNLOADED":
+      return "bg-sky-500 border-sky-500";
     default:
       return "bg-slate-400 border-slate-400";
   }
@@ -60,6 +67,16 @@ function getEventIcon(eventType: TimelineEventType): string {
     case "RESERVATION_COMPLETED":
     case "REFERRAL_COMPLETED":
       return "\u2713";
+    case "DOCUMENT_UPLOADED":
+      return "U";
+    case "DOCUMENT_REPLACED":
+      return "R";
+    case "DOCUMENT_DELETED":
+      return "D";
+    case "DOCUMENT_VIEWED":
+      return "V";
+    case "DOCUMENT_DOWNLOADED":
+      return "\u2193";
     default:
       return "\u2022";
   }
@@ -95,6 +112,16 @@ function getEventLabel(eventType: TimelineEventType): string {
       return "Reservation Completed";
     case "REFERRAL_COMPLETED":
       return "Referral Completed";
+    case "DOCUMENT_UPLOADED":
+      return "Document Uploaded";
+    case "DOCUMENT_REPLACED":
+      return "Document Replaced";
+    case "DOCUMENT_DELETED":
+      return "Document Deleted";
+    case "DOCUMENT_VIEWED":
+      return "Document Viewed";
+    case "DOCUMENT_DOWNLOADED":
+      return "Document Downloaded";
     default:
       return eventType;
   }

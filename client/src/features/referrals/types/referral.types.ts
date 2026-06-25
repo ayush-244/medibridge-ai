@@ -137,7 +137,54 @@ export type TimelineEventType =
   | "PATIENT_ARRIVED"
   | "RESERVATION_CANCELLED"
   | "RESERVATION_COMPLETED"
-  | "REFERRAL_COMPLETED";
+  | "REFERRAL_COMPLETED"
+  | "DOCUMENT_UPLOADED"
+  | "DOCUMENT_REPLACED"
+  | "DOCUMENT_DELETED"
+  | "DOCUMENT_VIEWED"
+  | "DOCUMENT_DOWNLOADED";
+
+export interface AvailableDoctor {
+  _id: string;
+  name: string;
+  specialization: string;
+  status: string;
+  currentPatients: number;
+  maxPatients: number;
+}
+
+export interface ReviewHospitalBeds {
+  _id: string;
+  name: string;
+  availableBeds: number;
+  availableICUBeds: number;
+  totalBeds: number;
+  totalICUBeds: number;
+}
+
+export interface ReviewData {
+  referral: Referral;
+  documents: ReferralDocument[];
+  timeline: TimelineEventItem[];
+  availableDoctors: AvailableDoctor[];
+  hospital: ReviewHospitalBeds;
+}
+
+export interface SmartAcceptPayload {
+  doctorId?: string;
+  bedType?: "GENERAL" | "ICU";
+}
+
+export interface AiSummary {
+  primaryDiagnosis?: string;
+  riskLevel?: string;
+  recommendedSpecialist?: string;
+  confidence?: number;
+  urgency?: string;
+  keyFindings?: string[];
+  transferRecommendation?: string;
+  [key: string]: unknown;
+}
 
 export interface TimelineEventItem {
   _id: string;

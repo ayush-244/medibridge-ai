@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bot, Clock, FileText, FolderOpen, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -68,6 +69,7 @@ export function ReferralDetailDrawer({
   onOpenCopilot,
   userHospitalId,
 }: ReferralDetailDrawerProps) {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "documents">("details");
 
   if (!referral) {
@@ -255,6 +257,16 @@ export function ReferralDetailDrawer({
             >
               <Bot className="h-4 w-4" />
               Open AI Copilot
+            </Button>
+          )}
+          {canRespondToReferral && (
+            <Button
+              variant="secondary"
+              className="w-full gap-2 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10"
+              onClick={() => navigate(`/referrals/${referral._id}/review`)}
+            >
+              <FolderOpen className="h-4 w-4" />
+              Review in Workspace
             </Button>
           )}
           {canRespondToReferral && (

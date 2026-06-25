@@ -7,7 +7,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ReferralForm } from "@/features/referrals/components/ReferralForm";
-import { AiSuggestionPanel } from "@/features/referrals/components/AiSuggestionPanel";
 import { useDoctors } from "@/features/doctors/hooks/useDoctors";
 import { useHospitals } from "@/features/hospitals/hooks/useHospitals";
 import { useAiSuggestions } from "@/features/referrals/hooks/useAiSuggestions";
@@ -191,36 +190,7 @@ export function CreateReferralDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <AiSuggestionPanel
-            patientName={values.patientName}
-            age={values.age}
-            diagnosis={values.diagnosis}
-            conditionSummary={values.conditionSummary}
-            originHospitalId={values.fromHospital}
-            isGenerating={ai.isGenerating}
-            specialist={ai.specialist}
-            hospitals={ai.hospitals}
-            error={ai.error}
-            docProgress={ai.progress}
-            isUploading={ai.isUploading}
-            docError={ai.docError}
-            uploadedFileName={ai.uploadedFileName}
-            isExtracting={ai.isExtracting}
-            extractionData={ai.extractionData}
-            extractionError={ai.extractionError}
-            isExtractionApplied={isExtractionApplied}
-            onGenerate={handleGenerate}
-            onUpload={handleUpload}
-            onResetUpload={ai.resetUpload}
-            onClear={ai.clearSuggestions}
-            onApplySpecialist={handleApplySpecialist}
-            onSelectDestinationHospital={handleSelectDestinationHospital}
-            onExtract={ai.extractReferralData}
-            onApplyExtraction={handleApplyExtraction}
-            onDiscardExtraction={ai.discardExtraction}
-          />
-
+        <div>
           <ReferralForm
             key={`${open}-${defaultFromHospitalId ?? "all"}`}
             hospitals={hospitals}
@@ -231,6 +201,30 @@ export function CreateReferralDialog({
             onUpdateField={updateField}
             onSubmit={(formValues) => void handleSubmit(formValues)}
             onCancel={() => onOpenChange(false)}
+
+            onUploadDocument={handleUpload}
+            isUploading={ai.isUploading}
+            docProgress={ai.progress}
+            docError={ai.docError}
+            uploadedFileName={ai.uploadedFileName}
+            onResetUpload={ai.resetUpload}
+
+            isGenerating={ai.isGenerating}
+            specialist={ai.specialist}
+            aiHospitalRecommendations={ai.hospitals}
+            aiError={ai.error}
+            onGenerateAi={handleGenerate}
+            onClearAi={ai.clearSuggestions}
+            onApplySpecialist={handleApplySpecialist}
+            onSelectDestinationHospital={handleSelectDestinationHospital}
+
+            isExtracting={ai.isExtracting}
+            extractionData={ai.extractionData}
+            extractionError={ai.extractionError}
+            isExtractionApplied={isExtractionApplied}
+            onExtract={ai.extractReferralData}
+            onApplyExtraction={handleApplyExtraction}
+            onDiscardExtraction={ai.discardExtraction}
           />
         </div>
       </DialogContent>

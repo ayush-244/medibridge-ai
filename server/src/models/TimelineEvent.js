@@ -18,6 +18,8 @@ const TIMELINE_EVENT_TYPES = [
   "DOCUMENT_UPLOADED",
   "DOCUMENT_REPLACED",
   "DOCUMENT_DELETED",
+  "DOCUMENT_VIEWED",
+  "DOCUMENT_DOWNLOADED",
 ];
 
 const timelineEventSchema = new mongoose.Schema(

@@ -4,7 +4,11 @@ const multer = require("multer");
 const {
   createReferral,
   getAllReferrals,
+  getReferralById,
+  getReviewData,
+  getAiSummary,
   acceptReferral,
+  smartAcceptReferral,
   rejectReferral,
   completeReferral,
 } = require("../controllers/referral.controller");
@@ -61,6 +65,54 @@ router.get(
     "REFERRAL_COORDINATOR"
   ),
   getAllReferrals
+);
+
+// Get Single Referral
+router.get(
+  "/:id",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  getReferralById
+);
+
+// Get Review Data
+router.get(
+  "/:id/review",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  getReviewData
+);
+
+// Get AI Summary
+router.get(
+  "/:id/ai-summary",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  getAiSummary
+);
+
+// Smart Accept Referral (with doctor + bed selection)
+router.post(
+  "/:id/smart-accept",
+  authenticateUser,
+  authorize(
+    "SUPER_ADMIN",
+    "HOSPITAL_ADMIN",
+    "REFERRAL_COORDINATOR"
+  ),
+  smartAcceptReferral
 );
 
 // Accept Referral
@@ -166,7 +218,8 @@ router.get(
   authorize(
     "SUPER_ADMIN",
     "HOSPITAL_ADMIN",
-    "REFERRAL_COORDINATOR"
+    "REFERRAL_COORDINATOR",
+    "DOCTOR"
   ),
   getReferralDocuments
 );
@@ -202,7 +255,8 @@ router.get(
   authorize(
     "SUPER_ADMIN",
     "HOSPITAL_ADMIN",
-    "REFERRAL_COORDINATOR"
+    "REFERRAL_COORDINATOR",
+    "DOCTOR"
   ),
   downloadReferralDocument
 );

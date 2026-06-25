@@ -1,6 +1,7 @@
 const Referral = require("../models/Referral");
 const Hospital = require("../models/Hospital");
 const BedReservation = require("../models/BedReservation");
+const Doctor = require("../models/Doctor");
 
 const { findAvailableDoctor } = require("./doctor.service");
 
@@ -12,7 +13,9 @@ const createNotification = require("./notification.service");
 const emitEvent = require("./socketEmitter.service");
 const { recordTimelineEvent } = require("./timeline.service");
 
-const acceptReferralService = async (referralId) => {
+const acceptReferralService = async (referralId, options = {}) => {
+  const { doctorId: preferredDoctorId, bedType: preferredBedType } = options;
+
   const referral = await Referral.findById(referralId);
 
   if (!referral) {
@@ -30,20 +33,42 @@ const acceptReferralService = async (referralId) => {
   const specialization =
     getSpecialization(referral.condition);
 
-  const bedType =
-    getBedType(referral.condition);
+  let doctor;
 
-  const doctor =
-    await findAvailableDoctor(
-      hospital._id,
-      specialization
-    );
+  if (preferredDoctorId) {
+    doctor = await Doctor.findById(preferredDoctorId);
 
-  if (!doctor) {
-    throw new Error(
-      `No ${specialization} doctor available`
-    );
+    if (!doctor) {
+      throw new Error("Selected doctor not found");
+    }
+
+    if (doctor.hospital.toString() !== hospital._id.toString()) {
+      throw new Error("Selected doctor is not at the receiving hospital");
+    }
+
+    if (doctor.status === "OFF_DUTY") {
+      throw new Error("Selected doctor is off duty");
+    }
+
+    if (doctor.currentPatients >= doctor.maxPatients) {
+      throw new Error("Selected doctor has no available capacity");
+    }
+  } else {
+    doctor =
+      await findAvailableDoctor(
+        hospital._id,
+        specialization
+      );
+
+    if (!doctor) {
+      throw new Error(
+        `No ${specialization} doctor available`
+      );
+    }
   }
+
+  const bedType =
+    preferredBedType || getBedType(referral.condition);
 
   if (
     bedType === "ICU" &&

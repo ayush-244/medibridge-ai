@@ -18,6 +18,7 @@ import { HospitalsPage } from "@/pages/hospitals/HospitalsPage";
 import { DoctorsPage } from "@/pages/doctors/DoctorsPage";
 import { PendingDoctorsPage } from "@/pages/doctors/PendingDoctorsPage";
 import { ReferralsPage } from "@/pages/referrals/ReferralsPage";
+import { ClinicalReviewPage } from "@/pages/referrals/ClinicalReviewPage";
 import { ReservationsPage } from "@/pages/reservations/ReservationsPage";
 import { ReportsPage } from "@/pages/reports/ReportsPage";
 import { NotificationsPage } from "@/pages/notifications/NotificationsPage";
@@ -111,6 +112,10 @@ export function AppRoutes() {
                 <Route
                   path={ROUTES.AI_RECOMMENDATIONS}
                   element={<AIRecommendationsPage />}
+                />
+                <Route
+                  path={ROUTES.REFERRAL_REVIEW}
+                  element={<ClinicalReviewPage />}
                 />
               </Route>
 

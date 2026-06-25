@@ -1,6 +1,9 @@
 const Referral = require("../models/Referral");
 const Hospital = require("../models/Hospital");
 const BedReservation = require("../models/BedReservation");
+const ReferralDocument = require("../models/ReferralDocument");
+const TimelineEvent = require("../models/TimelineEvent");
+const Doctor = require("../models/Doctor");
 const { findAvailableDoctor } = require("../services/doctor.service");
 const getSpecialization = require("../utils/specializationMapper");
 const getBedType = require("../utils/bedTypeMapper");
@@ -11,6 +14,13 @@ const { recordTimelineEvent } = require("../services/timeline.service");
 const {
   acceptReferralService,
 } = require("../services/referralAcceptance.service");
+
+const AI_SERVICE_URL =
+  process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+
+const AI_API = AI_SERVICE_URL.includes("/api/ai")
+  ? AI_SERVICE_URL
+  : `${AI_SERVICE_URL}/api/ai`;
 
 const createReferral = async (req, res) => {
   try {
@@ -246,10 +256,121 @@ const completeReferral = async (req, res) => {
   }
 };
 
+const getReferralById = async (req, res) => {
+  try {
+    const referral = await Referral.findById(req.params.id)
+      .populate("fromHospital", "name city location logo")
+      .populate("toHospital", "name city location logo")
+      .populate("requestedBy", "name email");
+
+    if (!referral) {
+      return res.status(404).json({ success: false, message: "Referral not found" });
+    }
+
+    res.status(200).json({ success: true, data: referral });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+const getReviewData = async (req, res) => {
+  try {
+    const referral = await Referral.findById(req.params.id)
+      .populate("fromHospital", "name city location logo")
+      .populate("toHospital", "name city location logo")
+      .populate("requestedBy", "name email");
+
+    if (!referral) {
+      return res.status(404).json({ success: false, message: "Referral not found" });
+    }
+
+    const specialization = getSpecialization(referral.condition);
+
+    const [documents, timeline, availableDoctors, hospital] = await Promise.all([
+      ReferralDocument.find({ referralId: referral._id }).sort({ createdAt: -1 }).lean(),
+      TimelineEvent.find({ referralId: referral._id }).sort({ createdAt: -1 }).limit(10).lean(),
+      Doctor.find({
+        hospital: referral.toHospital,
+        specialization,
+        status: { $ne: "OFF_DUTY" },
+      }).select("name specialization status currentPatients maxPatients").lean(),
+      Hospital.findById(referral.toHospital)
+        .select("name availableBeds availableICUBeds totalBeds totalICUBeds")
+        .lean(),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: { referral, documents, timeline, availableDoctors, hospital },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+const getAiSummary = async (req, res) => {
+  try {
+    const referral = await Referral.findById(req.params.id);
+
+    if (!referral) {
+      return res.status(404).json({ success: false, message: "Referral not found" });
+    }
+
+    const response = await fetch(`${AI_API}/patient-snapshot`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ patient_id: referral._id.toString() }),
+    });
+
+    const body = await response.json();
+
+    if (!response.ok || !body.success) {
+      return res.status(502).json({
+        success: false,
+        message: body.message || "Failed to generate AI summary",
+      });
+    }
+
+    res.status(200).json({ success: true, data: body.data });
+  } catch (error) {
+    console.error(error);
+    res.status(502).json({
+      success: false,
+      message: error.message || "Failed to generate AI summary",
+    });
+  }
+};
+
+const smartAcceptReferral = async (req, res) => {
+  try {
+    const result = await acceptReferralService(req.params.id, {
+      doctorId: req.body.doctorId,
+      bedType: req.body.bedType,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Referral accepted with custom assignment",
+      data: result,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createReferral,
   getAllReferrals,
+  getReferralById,
+  getReviewData,
+  getAiSummary,
   acceptReferral,
+  smartAcceptReferral,
   rejectReferral,
   completeReferral,
 };
