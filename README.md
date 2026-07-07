@@ -15,7 +15,7 @@
 
 ## Overview
 
-MediBridge is a comprehensive healthcare referral management system that streamlines the end-to-end referral lifecycle — from triage and hospital matching to bed reservation, patient tracking, and analytics. An integrated AI layer provides clinical copilot capabilities, intelligent hospital recommendations, and automated document analysis.
+MediBridge is a comprehensive healthcare referral management system that streamlines the end-to-end referral lifecycle — from triage and hospital matching to bed reservation, patient tracking, and analytics. An integrated AI layer provides clinical copilot capabilities, intelligent hospital recommendations, patient snapshots, and automated document analysis.
 
 ### Services
 
@@ -30,22 +30,24 @@ MediBridge is a comprehensive healthcare referral management system that streaml
 ## Features
 
 ### Core Platform
-- **Role-Based Access** — SUPER_ADMIN, HOSPITAL_ADMIN, REFERRAL_COORDINATOR, DOCTOR with granular route & action guards
-- **Hospital Management** — Directory, capacity tracking, bed availability, CRUD operations
-- **Doctor Directory** — Specialization filtering, availability status, hospital assignment
-- **Referral Management** — Create, track, accept, reject, complete referrals with Kanban & Table views
-- **Bed Reservations** — Time-limited bed holds with live countdown, extend/cancel/arrive/complete lifecycle
-- **Real-Time Updates** — Socket.IO powered live dashboard, notifications, and event-driven UI refresh
-- **Reports & Analytics** — Executive summaries, hospital/doctor/referral analytics with Recharts visualizations
-- **Audit Logs** — Full activity trail with module filtering and search
+- **Role-Based Access** — SUPER_ADMIN, HOSPITAL_ADMIN, REFERRAL_COORDINATOR, DOCTOR with granular route & action guards.
+- **Hospital Management** — Directory, capacity tracking, bed availability, CRUD operations.
+- **Doctor Directory & Dashboard** — Specialization filtering, availability status, hospital assignment, and dedicated doctor dashboards.
+- **Referral Management** — Create, track, accept, reject, complete referrals with Kanban & Table views.
+- **Bed Reservations** — Time-limited bed holds with live countdown, extend/cancel/arrive/complete lifecycle.
+- **Real-Time Updates** — Socket.IO powered live dashboard, notifications, and event-driven UI refresh.
+- **Reports & Analytics** — Executive summaries, hospital/doctor/referral analytics with Recharts visualizations.
+- **Admin & User Management** — Full user lifecycle, registration, settings, and role adjustments.
+- **Audit Logs** — Full activity trail with module filtering and search.
+- **Location Intelligence (Maps)** — Interactive hospital mapping, proximity search, and routing/ETA capabilities.
 
 ### AI-Powered Features
-- **Clinical Copilot** — RAG-based document Q&A over uploaded medical PDFs
-- **Intelligent Hospital Matching** — AI-driven hospital ranking and specialist matching
-- **Smart Referral Engine** — Hospital ranking, specialist matching, bed availability scoring
-- **Clinical Intelligence** — Severity prediction, specialty & hospital recommendations
-- **Document Extraction** — Automated extraction of structured data from medical documents
-- **Summarization** — AI-generated medical document summaries
+- **Clinical Copilot** — RAG-based document Q&A over uploaded medical PDFs.
+- **Patient Snapshot** — Auto-generated clinical summaries of patient history and conditions.
+- **Intelligent Hospital Matching** — AI-driven hospital ranking and specialist matching based on patient needs.
+- **Smart Referral Engine & Autofill** — Seamlessly extract document information to autofill referral forms and recommend the best destinations.
+- **Clinical Intelligence** — AI triage for severity prediction, specialty & hospital recommendations.
+- **Document Extraction & Summarization** — Automated extraction of structured data and summaries from medical documents.
 
 ---
 
@@ -91,7 +93,6 @@ MediBridge is a comprehensive healthcare referral management system that streaml
 |---|---|
 | **Containerization** | Docker Compose |
 | **Database** | MongoDB 7 |
-| **CI** | N/A (local/first) |
 
 ---
 
@@ -102,7 +103,7 @@ medibridge-ai/
 ├── client/               # React SPA
 │   └── src/
 │       ├── components/   # Shared UI (common, analytics, layout, ui)
-│       ├── features/     # Domain modules (dashboard, hospitals, doctors, referrals, etc.)
+│       ├── features/     # Domain modules (admin, copilot, dashboard, maps, referrals, etc.)
 │       ├── context/      # React contexts (Auth, Socket)
 │       ├── hooks/        # Shared hooks
 │       ├── lib/          # Utilities, constants, routes
@@ -113,15 +114,15 @@ medibridge-ai/
 │   └── src/
 │       ├── config/       # DB, socket setup
 │       ├── controllers/  # Route handlers
-│       ├── middleware/    # Auth, role guards, error handling
+│       ├── middleware/   # Auth, role guards, error handling
 │       ├── models/       # Mongoose schemas
-│       ├── routes/       # Express route definitions
+│       ├── routes/       # Express route definitions (referral, copilot, ai, upload, admin, etc.)
 │       ├── services/     # Business logic
 │       └── utils/        # Helpers
 │
 ├── ai-service/           # Python FastAPI service
 │   └── app/
-│       ├── api/          # Route handlers
+│       ├── api/          # Route handlers (chat, snapshot, recommendation, extraction, etc.)
 │       ├── core/         # Config, exceptions, logging
 │       ├── models/       # Pydantic schemas
 │       └── services/     # LLM, vector, extraction, matching
@@ -226,7 +227,7 @@ ENVIRONMENT=development
 
 ## API Overview
 
-### REST Endpoints
+### REST Endpoints (Server)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -240,8 +241,11 @@ ENVIRONMENT=development
 | `GET` | `/api/reservations` | Bed reservations |
 | `GET` | `/api/notifications` | User notifications |
 | `GET` | `/api/reports/*` | Analytics reports |
+| `GET` | `/api/admin/*` | Admin endpoints |
+| `GET` | `/api/users/*` | User management |
+| `GET` | `/api/copilot/*` | Copilot operations |
 
-### AI Endpoints (`/api/ai/*`)
+### AI Endpoints (`/api/ai/*` via AI Service)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -252,6 +256,7 @@ ENVIRONMENT=development
 | `POST` | `/api/ai/hospital-match` | AI hospital matching |
 | `POST` | `/api/ai/recommendation` | Smart referral recommendations |
 | `POST` | `/api/ai/clinical-intelligence` | Severity & specialty prediction |
+| `POST` | `/api/ai/snapshot` | Patient clinical snapshot |
 
 ---
 
@@ -266,6 +271,7 @@ ENVIRONMENT=development
 | `BedReservation` | `bedreservations` | Time-bound bed holds |
 | `Notification` | `notifications` | User notifications |
 | `ActivityLog` | `activitylogs` | Audit trail |
+| `Document` | `documents` | Medical documents & references |
 
 ---
 
