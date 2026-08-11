@@ -96,6 +96,7 @@ MediBridge is a comprehensive healthcare referral management system that streaml
 
 ---
 
+
 ## Architecture
 
 ```
